@@ -6,6 +6,7 @@ const ACTIONS = [
   ['shoot', 'Shoot'], ['aim', 'Aim / scope'], ['reload', 'Reload'], ['next', 'Next gun'], ['prev', 'Previous gun'],
   ['lookL', 'Look left'], ['lookR', 'Look right'], ['lookU', 'Look up'], ['lookD', 'Look down'],
   ['slot1', 'Primary slot'], ['slot2', 'Backup slot'], ['slot3', 'Melee slot'], ['slot4', 'Special slot'], ['slot5', 'Sniper slot'], ['slot6', 'Premium slot'],
+  ['board', 'Leaderboard (hold)'],
 ];
 const DEFAULT_BINDS = {
   fwd: ['KeyW', ''], back: ['KeyS', ''], left: ['KeyA', ''], right: ['KeyD', ''], jump: ['Space', ''],
@@ -13,6 +14,7 @@ const DEFAULT_BINDS = {
   next: ['WheelDown', 'KeyE'], prev: ['WheelUp', 'KeyQ'],
   lookL: ['ArrowLeft', ''], lookR: ['ArrowRight', ''], lookU: ['ArrowUp', ''], lookD: ['ArrowDown', ''],
   slot1: ['Digit1', ''], slot2: ['Digit2', ''], slot3: ['Digit3', ''], slot4: ['Digit4', ''], slot5: ['Digit5', ''], slot6: ['Digit6', ''],
+  board: ['Tab', ''],
 };
 const copyBinds = b => Object.fromEntries(Object.entries(b).map(([k, v]) => [k, [...v]]));
 let binds = copyBinds(DEFAULT_BINDS);
@@ -29,7 +31,7 @@ function nice(code) {
 }
 function renderHelp() {
   const b = a => binds[a].filter(Boolean).map(nice).join('/') || '—';
-  $('help').textContent = `${b('fwd')}${b('left')}${b('back')}${b('right')} move · ${b('jump')} jump · ${b('shoot')} shoot · ${b('aim')} aim/scope · ${b('reload')} reload · ${b('lookL')}${b('lookR')}${b('lookU')}${b('lookD')} look · ${[1, 2, 3, 4, 5, 6].map(n => b('slot' + n)).join('')} or ${b('next')}/${b('prev')} switch weapons (press a slot again to flip between guns in it)`;
+  $('help').textContent = `${b('fwd')}${b('left')}${b('back')}${b('right')} move · ${b('jump')} jump · ${b('shoot')} shoot · ${b('aim')} aim/scope · ${b('reload')} reload · ${b('lookL')}${b('lookR')}${b('lookU')}${b('lookD')} look · ${[1, 2, 3, 4, 5, 6].map(n => b('slot' + n)).join('')} or ${b('next')}/${b('prev')} switch weapons (press a slot again to flip between guns in it) · hold ${b('board')} leaderboard (deathmatch)`;
   renderHotbar(); // slot key labels follow your binds
 }
 let rebinding = null; // { a: action, s: slot }
@@ -108,18 +110,17 @@ $('menu').addEventListener('click', () => {
 });
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === renderer.domElement;
-  $('menu').style.display = locked || shopOpen || inLobby ? 'none' : 'flex';
+  $('menu').style.display = locked || shopOpen || inLobby || matchOver ? 'none' : 'flex';
   $('shop').style.display = shopOpen && !locked ? 'flex' : 'none';
   if (!locked) {
     for (const k in keys) keys[k] = false;
     $('msg').textContent = !dead ? 'Paused'
-      : mode === 'dm' ? `The bot got you. You scored ${kills} kill${kills === 1 ? '' : 's'}.`
       : `${newBest ? 'NEW BEST! ' : ''}You died on wave ${wave} with ${kills} kills.`;
     $('go').textContent = dead ? '[ CLICK TO TRY AGAIN ]' : '[ CLICK TO RESUME ]';
   }
 });
 // if the browser refuses to re-lock the mouse, show the menu so you can click back in
-document.addEventListener('pointerlockerror', () => { if (!shopOpen && !inLobby) { $('msg').textContent = 'Click to continue'; $('menu').style.display = 'flex'; } });
+document.addEventListener('pointerlockerror', () => { if (!shopOpen && !inLobby && !matchOver) { $('msg').textContent = 'Click to continue'; $('menu').style.display = 'flex'; } });
 
 // ---------- lobby ----------
 // PLAY starts a fresh game in the arena. LOBBY (from the pause or death screen) ends the game and goes back.

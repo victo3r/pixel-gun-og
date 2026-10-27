@@ -5,7 +5,7 @@ const crateMeshes = solids.filter(s => s.mesh).map(s => s.mesh); // crates never
 function shotTargets() { const t = [ground, ...crateMeshes]; for (const zz of zombies) if (!zz.dead) t.push(...zz.parts); return t; }
 function shoot() {
   const w = WEAPONS[cur];
-  if (cd > 0 || reloading > 0) return;
+  if (cd > 0 || reloading > 0 || respawnT > 0) return;
   if (w.melee) return stab(w);
   if (ammo[cur] <= 0) { if (reserve[cur]) reload(); else { cd = .3; dry(); } return; }
   ammo[cur]--; cd = w.rate;

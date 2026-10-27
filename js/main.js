@@ -1,6 +1,10 @@
 // main update loop and HUD
 // ---------- update ----------
 function update(dt) {
+  // deathmatch: while you're dead you can't move or shoot until you respawn
+  const down = mode === 'dm' && dmDown(dt);
+  const w = WEAPONS[cur];
+  if (!down) {
   // movement
   const mx = held('right') - held('left'), mz = held('back') - held('fwd');
   const lx = held('lookR') - held('lookL'), ly = held('lookU') - held('lookD');
@@ -29,7 +33,6 @@ function update(dt) {
   camera.rotation.set(P.pitch, P.yaw, 0);
 
   // weapon
-  const w = WEAPONS[cur];
   cd -= dt;
   if (w.auto && held('shoot')) shoot();
   aiming = held('aim');
@@ -53,9 +56,10 @@ function update(dt) {
     vm.rotation.set(kick * .25 + (reloading > 0 ? -.6 : 0), 0, 0);
   }
   if ((crossT -= dt) <= 0) $('cross').style.setProperty('--c', '#fff');
+  } // end of !down
 
-  // deathmatch: keep a bot in the arena
-  if (mode === 'dm') updateDM(dt);
+  // deathmatch: bot respawns, match timer, leaderboard
+  if (mode === 'dm') { updateDM(dt); if (matchOver) return; }
 
   // waves (zombie mode only)
   if (mode === 'zombies' && toSpawn > 0 && (spawnT -= dt) <= 0) { spawnZombie(); toSpawn--; spawnT = Math.max(.3, 1.5 - wave * .1); }
@@ -165,7 +169,7 @@ function update(dt) {
   for (const p of pads) {
     if (!p.item) { if ((p.t -= dt) <= 0) spawnPickup(p); continue; }
     p.item.rotation.y += dt * 2; p.item.position.y = .6 + Math.sin(now * .003 + p.x) * .1;
-    if (Math.hypot(P.pos.x - p.x, P.pos.z - p.z) < 1 && P.pos.y < 1.5 && usePickup(p.type)) { clearPad(p); p.t = RESPAWN + Math.random() * 10; }
+    if (Math.hypot(P.pos.x - p.x, P.pos.z - p.z) < 1 && P.pos.y < 1.5 && !down && usePickup(p.type)) { clearPad(p); p.t = RESPAWN + Math.random() * 10; }
   }
 
   // explosion fireballs
@@ -214,7 +218,7 @@ function update(dt) {
   const spare = reserve[cur] === Infinity ? '∞' : reserve[cur];
   $('ammo').textContent = `${w.name} ${stars(cur)}\n${w.melee ? 'MELEE' : reloading > 0 ? 'RELOADING' : !ammo[cur] && !reserve[cur] ? 'NO AMMO' : ammo[cur] + ' / ' + spare}`;
   $('ammo').style.whiteSpace = 'pre';
-  $('top').textContent = mode === 'dm' ? `DEATHMATCH   ·   KILLS ${kills}` : `WAVE ${wave}   ·   KILLS ${kills}   ·   ◆ ${coins}`;
+  if (mode !== 'dm') $('top').textContent = `WAVE ${wave}   ·   KILLS ${kills}   ·   ◆ ${coins}`; // deathmatch fills the top in updateDM
 }
 
 const clock = new THREE.Clock();

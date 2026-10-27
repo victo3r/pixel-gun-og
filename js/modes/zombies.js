@@ -59,24 +59,29 @@ function spawnZombie(type = pickType()) {
   }
 }
 // quiet = burn damage: small orange sparks, no red flash or hit marker
-function hurtZombie(zz, dmg, point, head, quiet = false) {
+// by = the deathmatch bot doing the damage, or null if it's you
+function hurtZombie(zz, dmg, point, head, quiet = false, by = null) {
   zz.hp -= dmg;
+  if (zz.type === 'bot') { zz.hitBy = by ?? YOU_T; zz.hitByT = 2; } // bots turn on whoever shoots them
   if (quiet) burst(point, 0xff7a1a, 2);
-  else { zz.flash = .1; burst(point, zz.type === 'bot' ? 0xb01818 : 0x3a8a2a, head ? 8 : 4); setCross('#f44'); }
+  else { zz.flash = .1; burst(point, zz.type === 'bot' ? 0xb01818 : 0x3a8a2a, head ? 8 : 4); if (!by) setCross('#f44'); }
   if (zz.hp <= 0 && !zz.dead) {
-    zz.dead = .0001; kills++; coins += zz.coins + (head ? 2 : 0);
-    if (zz.type === 'bot') botDown(zz); // deathmatch bot (see modes/deathmatch.js)
+    zz.dead = .0001;
+    if (!by) { kills++; coins += zz.coins + (head ? 2 : 0); }
+    if (zz.type === 'bot') botDown(zz, by, head); // deathmatch bot (see modes/deathmatch.js)
     else if (zz.type === 'exploder') explode(zz); // shooting one still sets it off, so keep your distance
     else if (zz.type === 'boss') { beep(60, .9, 'sawtooth', .2); banner(`BOSS DOWN!\n+${zz.coins} ◆`); }
     else beep(zz.type === 'brute' ? 110 : 180, .3, 'sawtooth', .12);
   }
 }
-// pierce = special damage that skips armor and hits HP directly (nothing uses it yet)
-function hurtPlayer(d, pierce = false) {
+// pierce = special damage that skips armor and hits HP directly (nothing uses it yet). by = the deathmatch bot that shot you
+function hurtPlayer(d, pierce = false, by = null) {
+  if (respawnT > 0 || matchOver) return; // already down in deathmatch
   const soak = pierce ? 0 : Math.min(P.armor, d);
   P.armor -= soak; P.hp -= d - soak;
   $('hit').style.background = soak === d ? '#c9ced6' : 'red'; // silver flash = armor took all of it
   $('hit').style.opacity = .4; setTimeout(() => $('hit').style.opacity = 0, 80);
+  if (P.hp <= 0 && mode === 'dm') { P.hp = 0; youDown(by); return; } // deathmatch: you respawn instead of the game ending
   if (P.hp <= 0 && !dead) { P.hp = 0; dead = true; saveBest(); document.exitPointerLock(); }
 }
 // high score: best wave reached, ties go to more kills. Saved in the browser like your keybinds.
