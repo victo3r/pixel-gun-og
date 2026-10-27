@@ -73,7 +73,6 @@ canvas{width:100vw!important;height:100vh!important;display:block}
 #lobbyCtrl:hover{background:#5a3f22}
 #stage{flex:1;position:relative;cursor:grab;touch-action:none}
 #stage:active{cursor:grabbing}
-#stageHint{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:13px;color:#cdf;opacity:.6}
 @media (max-width:700px){ /* narrow window: character on top, menu underneath */
   #lobby{flex-direction:column}#stage{order:-1;flex:none;height:40vh}
   #lobbyPanel{width:100%;flex:1;background:rgba(3,16,22,.9);padding:12px 16px}
