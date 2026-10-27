@@ -1,17 +1,17 @@
-// lobby: its own scene. A floating grass island at dusk with your character on a pedestal.
+// lobby: its own scene. A clearing in a blocky forest at dusk, with your character on a pedestal.
 // The character uses Minecraft proportions: 1 pixel = 1/16 block, head 8x8x8, body 8x12x4, arms and legs 4x12x4.
 const lobbyScene = new THREE.Scene();
 const lobbyCam = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, .1, 300);
-{ // teal dusk sky
+{ // teal dusk sky, peeking over the treetops; the lower part matches the fog so the far trees melt into it
   const c = document.createElement('canvas'); c.width = 2; c.height = 256;
   const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256);
-  gr.addColorStop(0, '#04141b'); gr.addColorStop(.5, '#0c4d57'); gr.addColorStop(.78, '#2ab0a2'); gr.addColorStop(1, '#0b3036');
+  gr.addColorStop(0, '#061a1e'); gr.addColorStop(.35, '#0f4d50'); gr.addColorStop(.55, '#22786a'); gr.addColorStop(.72, '#173f37'); gr.addColorStop(1, '#0e2a24');
   g.fillStyle = gr; g.fillRect(0, 0, 2, 256);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   lobbyScene.background = t;
 }
-lobbyScene.fog = new THREE.Fog(0x16707a, 22, 70);
-lobbyScene.add(new THREE.HemisphereLight(0xcff6ff, 0x1a3030, 1));
+lobbyScene.fog = new THREE.Fog(0x173f37, 16, 62);
+lobbyScene.add(new THREE.HemisphereLight(0xcff6e8, 0x1d2f1a, 1));
 const lKey = new THREE.DirectionalLight(0xfff0d8, 1.6); lKey.position.set(-4, 8, 7); lobbyScene.add(lKey);
 const lRim = new THREE.DirectionalLight(0x5ff5e6, 1.4); lRim.position.set(3, 4, -6); lobbyScene.add(lRim);
 
@@ -27,34 +27,69 @@ function pixMat(w, h, draw, extra) {
   return lam({ map: t, ...extra });
 }
 
-// ---------- floating islands ----------
+// ---------- the forest ----------
 const lCube = new THREE.BoxGeometry(1, 1, 1);
-const DIRT = [125, 88, 55];
-const lDirt = pixMat(16, 16, g => fillN(g, 16, 16, DIRT, 28));
-const lGrassTop = pixMat(16, 16, g => fillN(g, 16, 16, [95, 160, 60], 30));
-const lGrassSide = pixMat(16, 16, g => {
-  fillN(g, 16, 16, DIRT, 28);
-  for (let x = 0; x < 16; x++) { const d = 3 + (Math.random() * 2 | 0); for (let y = 0; y < d; y++) dot(g, rgb([92, 158, 58], (Math.random() - .5) * 30), x, y); }
-});
-const lStone = stoneMat(1, 1);
-const lGrass = [lGrassSide, lGrassSide, lGrassTop, lDirt, lGrassSide, lGrassSide];
-function island(cx, cy, cz, R) {
-  const grass = [], dirt = [], stone = [];
-  for (let x = -R; x <= R; x++) for (let z = -R; z <= R; z++) {
-    const d = Math.hypot(x, z); if (d > R + .2) continue;
-    grass.push([cx + x, cy - .5, cz + z]);
-    const depth = Math.max(1, Math.round((R + .4 - d) * .9 + Math.random() * 1.5)); // deeper in the middle, so it hangs like a cone
-    for (let y = 1; y <= depth; y++) (y <= 2 ? dirt : stone).push([cx + x, cy - .5 - y, cz + z]);
-  }
-  const o = new THREE.Object3D();
-  for (const [mat, list] of [[lGrass, grass], [lDirt, dirt], [lStone, stone]]) { // one draw call per block type
-    const m = new THREE.InstancedMesh(lCube, mat, list.length);
-    list.forEach((p, i) => { o.position.set(...p); o.updateMatrix(); m.setMatrixAt(i, o.matrix); });
-    lobbyScene.add(m);
+// grass floor that runs off into the fog
+const lGround = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), lam({ map: tex(g => {
+  noise(g, [86, 150, 56], 30); g.fillStyle = 'rgba(25,70,20,.35)';
+  for (let i = 0; i < 10; i++) g.fillRect(Math.random() * 16 | 0, Math.random() * 16 | 0, 1, 2);
+}, 100, 100) }));
+lGround.rotation.x = -Math.PI / 2; lobbyScene.add(lGround);
+const lBark = pixMat(8, 16, g => { fillN(g, 8, 16, [92, 66, 42], 24); for (const x of [1, 4, 6]) for (let y = 0; y < 16; y++) if (Math.random() < .8) dot(g, rgb([62, 43, 27], (Math.random() - .5) * 18), x, y); });
+const lLeaf = pixMat(16, 16, g => { fillN(g, 16, 16, [72, 142, 52], 34); for (let i = 0; i < 14; i++) dot(g, 'rgba(10,40,10,.45)', Math.random() * 16 | 0, Math.random() * 16 | 0, 2, 1); });
+function lInst(mat, list) { // one draw call for a whole list of [x, y, z, sx, sy, sz, tint?] boxes
+  const m = new THREE.InstancedMesh(lCube, mat, list.length), o = new THREE.Object3D(), c = new THREE.Color();
+  list.forEach((p, i) => {
+    o.position.set(p[0], p[1], p[2]); o.scale.set(p[3], p[4], p[5]); o.updateMatrix(); m.setMatrixAt(i, o.matrix);
+    if (p[6] !== undefined) m.setColorAt(i, c.set(p[6]));
+  });
+  lobbyScene.add(m);
+}
+const L_OAK = [0xffffff, 0xe2f5d0, 0xcfe8b8, 0xbad9a8], L_PINE = [0x8fb59a, 0x7fa58c, 0x9cc4a3];
+const lPick = a => a[Math.random() * a.length | 0];
+const lTrunks = [], lLeaves = [], lSpots = [];
+const lFree = (x, z, gap) => lSpots.every(([a, b]) => (a - x) ** 2 + (b - z) ** 2 > gap * gap);
+const lBlocksView = (x, z) => Math.hypot(x, z) < 8.5 || (z > -4 && Math.abs(x) < 12); // keep the clearing and the line to the camera open
+function lForestTree(x, z) {
+  if (Math.random() < .3) { // pine: stacked layers that shrink toward the top
+    const h = 2 + Math.random() * 1.5, layers = 3 + (Math.random() * 2 | 0), col = lPick(L_PINE);
+    lTrunks.push([x, (h + layers) / 2, z, .8, h + layers, .8]);
+    for (let k = 0; k < layers; k++) { const s = 4 - k * (3 / layers); lLeaves.push([x, h + .6 + k * 1.1, z, s, 1.2, s, col]); }
+    lLeaves.push([x, h + .6 + layers * 1.1, z, .7, .8, .7, col]);
+  } else { // oak: a wide blob of leaves with a smaller one on top
+    const big = Math.random() < .35, h = 3.5 + Math.random() * 4 + (big ? 2 : 0), w = big ? 1.4 : 1, s = (big ? 5.5 : 4) + Math.random(), col = lPick(L_OAK);
+    lTrunks.push([x, (h + 1) / 2, z, w, h + 1, w]);
+    lLeaves.push([x, h + .9, z, s, 2.6, s, col]);
+    lLeaves.push([x, h + 2.8, z, s * .6, 1.4, s * .6, col]);
+    if (Math.random() < .5) lLeaves.push([x + (Math.random() - .5) * s * .5, h - .3, z + (Math.random() - .5) * s * .5, s * .55, 1.2, s * .55, col]);
   }
 }
-island(0, 0, 0, 6);
-island(-17, -4, -22, 3); island(19, 2, -28, 2); island(-26, 6, -40, 3); island(8, -9, -18, 1);
+for (let tries = 0, k = 0; k < 240 && tries < 6000; tries++) {
+  const x = (Math.random() - .5) * 150, z = 25 - Math.random() * 105;
+  if (lBlocksView(x, z) || !lFree(x, z, 2.6)) continue;
+  lSpots.push([x, z]); lForestTree(x, z); k++;
+}
+const lBushes = [];
+for (let tries = 0, k = 0; k < 70 && tries < 3000; tries++) {
+  const a = Math.random() * Math.PI * 2, d = 6.5 + Math.random() * 30, x = Math.cos(a) * d, z = Math.sin(a) * d - 4;
+  if ((z > -3 && Math.abs(x) < 9) || !lFree(x, z, 1.6)) continue;
+  const s = .9 + Math.random() * .9; lBushes.push([x, s * .4, z, s * 1.3, s * .8, s * 1.1, lPick(L_OAK)]); k++;
+}
+lInst(lBark, lTrunks); lInst(lLeaf, lLeaves); lInst(lLeaf, lBushes);
+// a fallen log and some red mushrooms round the edge of the clearing
+const lLog = box(3.6, .7, .7, lBark); lLog.position.set(-6.2, .35, -6.5); lLog.rotation.y = .5; lobbyScene.add(lLog);
+const lStem = lam({ color: 0xeee3cf }), lCap = lam({ color: 0xd8322e });
+for (let i = 0; i < 7; i++) {
+  const a = -Math.PI * (.1 + Math.random() * .8), d = 5 + Math.random() * 2.5, x = Math.cos(a) * d, z = Math.sin(a) * d - 1;
+  const st = box(.12, .22, .12, lStem); st.position.set(x, .11, z); lobbyScene.add(st);
+  const cp = box(.34, .14, .34, lCap); cp.position.set(x, .28, z); lobbyScene.add(cp);
+}
+// soft light shafts coming down through the canopy
+const lRays = [];
+for (const [x, z, r] of [[-7, -14, .3], [3, -18, .25], [11, -12, .35], [-15, -22, .28]]) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 26), new THREE.MeshBasicMaterial({ color: 0xc8ffe8, transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  m.position.set(x, 9, z); m.rotation.z = r; lRays.push(m); lobbyScene.add(m);
+}
 
 // pedestal you stand on: stone with a gold trim and a teal glow strip
 const pedTop = stoneMat(2, 2), pedSide = stoneMat(2, .5);
@@ -89,21 +124,14 @@ for (let i = 0; i < 14; i++) { // little flowers dotted on the grass
   f.position.set(Math.cos(a) * d, .07, Math.sin(a) * d); lobbyScene.add(f);
 }
 
-// floating glowing cubes, drifting clouds, stars
-const floaters = [];
-for (let i = 0; i < 16; i++) {
-  const s = .18 + Math.random() * .3, a = i / 16 * Math.PI * 2, r = 7.5 + Math.random() * 4;
-  const m = box(s, s, s, new THREE.MeshBasicMaterial({ color: i % 3 ? 0x46f2e2 : 0xffd23f, transparent: true, opacity: .85 }));
-  m.position.set(Math.cos(a) * r, -1 + Math.random() * 6, Math.sin(a) * r - 2);
-  floaters.push({ m, y: m.position.y, p: Math.random() * 6, s: .3 + Math.random() * .6 });
-  lobbyScene.add(m);
-}
-const clouds = [];
-const cloudMat = lam({ color: 0xe8fbff, transparent: true, opacity: .8 });
-for (let i = 0; i < 7; i++) {
-  const c = box(4 + Math.random() * 6, 1, 2 + Math.random() * 3, cloudMat);
-  c.position.set(-40 + i * 13 + Math.random() * 5, 9 + Math.random() * 6, -25 - Math.random() * 20);
-  clouds.push(c); lobbyScene.add(c);
+// fireflies drifting between the trees, and stars above the treetops
+const flies = [];
+for (let i = 0; i < 45; i++) {
+  const s = .07 + Math.random() * .07;
+  const m = box(s, s, s, new THREE.MeshBasicMaterial({ color: i % 4 ? 0xd8ff6a : 0xffe27a, transparent: true, fog: false }));
+  const x = (Math.random() - .5) * 36, y = .3 + Math.random() * 3.5, z = 3 - Math.random() * 26;
+  m.position.set(x, y, z); lobbyScene.add(m);
+  flies.push({ m, x, y, z, p: Math.random() * 6.3, s: .4 + Math.random() * .8 });
 }
 {
   const pts = [];
@@ -206,8 +234,11 @@ function updateLobby(dt) {
   headMats[4] = blinkT < 0 ? faceBlink : faceOpen; heroHead.material = headMats;
   if (blinkT < -.13) blinkT = 2 + Math.random() * 3;
   // scenery
-  for (const f of floaters) { f.m.position.y = f.y + Math.sin(t * f.s + f.p) * .4; f.m.rotation.x += dt * f.s; f.m.rotation.y += dt * f.s * .7; }
-  for (const c of clouds) { c.position.x += dt * .6; if (c.position.x > 50) c.position.x = -50; }
+  for (const f of flies) { // wander and blink on and off
+    f.m.position.set(f.x + Math.sin(t * f.s * .7 + f.p) * .6, f.y + Math.sin(t * f.s + f.p * 2) * .35, f.z + Math.cos(t * f.s * .5 + f.p) * .6);
+    f.m.material.opacity = .2 + .8 * Math.max(0, Math.sin(t * f.s * 2 + f.p));
+  }
+  for (const r of lRays) r.material.opacity = .055 + Math.sin(t * .5 + r.position.x) * .02;
   for (const l of lamps) l.intensity = 5.5 + Math.sin(t * 9 + l.position.x) * .4 + Math.sin(t * 23) * .2; // lantern flicker
   glowStrip.material.color.setHSL(.48, .85, .5 + Math.sin(t * 2) * .08);
   frameLobby();
