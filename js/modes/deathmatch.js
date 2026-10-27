@@ -5,7 +5,7 @@
 // dmgMul = its guns do this much of their normal damage to you.
 // moveErr = extra wobble when you're running (at full speed), so strafing really does make it miss more.
 const BOT = { hp: 100, speed: 5, react: .45, turn: 8, lead: .05, aimErr: .025, moveErr: .045, dmgMul: .5, respawn: 1.5 };
-const SNIPE_T = .9; // a sniper bot holds its red laser on you this long before it fires
+const SNIPE_T = .9; // a sniper bot lines up its shot on you this long before it fires
 // guns a bot can spawn with, and the distance it tries to keep from you with each one [closest, furthest]
 const BOT_GUNS = {
   0: [6, 13],  // pistol
@@ -68,7 +68,7 @@ function spawnBot() { // somewhere open, well away from you
   }
 }
 function botDown(b) {
-  b.tag.visible = false; b.flashM.visible = false; laser.visible = false;
+  b.tag.visible = false; b.flashM.visible = false;
   beep(180, .3, 'sawtooth', .12); toast('+1 KILL', '#ffd23f');
 }
 
@@ -80,20 +80,6 @@ function clearLine(a, c) { // nothing solid between two points (crates block, th
   losRay.set(a, losDir.divideScalar(d)); losRay.far = d;
   return !losRay.intersectObjects(crateMeshes, false).length;
 }
-// shot tracers: a quick yellow streak so you can see where the bot's bullets went
-const tracers = [];
-function tracer(a, c) {
-  const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, c]), new THREE.LineBasicMaterial({ color: 0xffe08a, transparent: true }));
-  scene.add(l); tracers.push({ l, t: .08 });
-}
-// sniper bots show a red laser while they line up a shot. Move when you see it!
-const laser = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(6), 3)),
-  new THREE.LineBasicMaterial({ color: 0xff2222, transparent: true }));
-laser.frustumCulled = false; laser.visible = false; scene.add(laser);
-function setLaser(a, c, op) {
-  const p = laser.geometry.attributes.position; p.setXYZ(0, a.x, a.y, a.z); p.setXYZ(1, c.x, c.y, c.z); p.needsUpdate = true;
-  laser.material.opacity = op; laser.visible = true;
-}
 const aimDir = (yaw, pitch, out) => out.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
 
 function botFire(b, W, dist) {
@@ -103,7 +89,6 @@ function botFire(b, W, dist) {
   if (W.scope) b.aimT = 0; // has to line up the next sniper shot from scratch
   if (b.ammo <= 0) b.reload = W.reload * 1.2;
   shotSound(W.vol * Math.max(.15, 1 - dist / 45), .15, W.cut);
-  b.tip.getWorldPosition(muz);
   pBox.min.set(P.pos.x - .35, P.pos.y, P.pos.z - .35); pBox.max.set(P.pos.x + .35, P.pos.y + 1.85, P.pos.z + .35);
   // the sniper's listed spread is its unscoped hip-fire, but the bot lines up its shots, so it gets a tighter cone
   const err = BOT.aimErr + BOT.moveErr * Math.min(1, Math.hypot(b.pvx, b.pvz) / 6) + W.spread * (W.scope ? .1 : .8), walls = [ground, ...crateMeshes];
@@ -113,14 +98,10 @@ function botFire(b, W, dist) {
     losRay.set(eye, dirV); losRay.far = 90;
     const wall = losRay.intersectObjects(walls, false)[0];
     const onYou = losRay.ray.intersectBox(pBox, hitV), youD = onYou ? eye.distanceTo(hitV) : Infinity;
-    let end;
     if (onYou && (!wall || wall.distance > youD) && !dead) {
       const head = hitV.y > P.pos.y + 1.45;
       hurtPlayer(Math.max(1, Math.round(W.dmg * BOT.dmgMul * (head ? 1.5 : 1))));
-      end = hitV;
-    } else if (wall) { end = wall.point; burst(wall.point, 0x999999, 2); }
-    else end = hitV.copy(eye).addScaledVector(dirV, 90);
-    if (i < 3) tracer(muz, end); // a shotgun blast only draws 3 of its pellets
+    } else if (wall) burst(wall.point, 0x999999, 2);
   }
 }
 
@@ -145,8 +126,6 @@ function updateBot(b, dt) {
   if (b.reload > 0 && (b.reload -= dt) <= 0) b.ammo = W.mag;
   const ready = sees && b.seeT >= BOT.react && b.reload <= 0;
   b.aimT = ready && sniper ? b.aimT + dt : 0;
-  laser.visible = false;
-  if (b.aimT > 0) { b.tip.getWorldPosition(muz); setLaser(muz, aimV.copy(eye).addScaledVector(aimDir(b.aimYaw, b.aimPitch, dirV), dist + 2), .25 + .6 * Math.min(1, b.aimT / SNIPE_T)); }
   if (ready && b.cd <= 0 && (!sniper || b.aimT >= SNIPE_T)) botFire(b, W, dist);
 
   // moving: keep the distance its gun likes, strafe side to side while fighting, come looking when it can't see you
@@ -183,24 +162,17 @@ function updateBot(b, dt) {
 let botWait = 0;
 function updateDM(dt) {
   if (!zombies.some(z => z.type === 'bot') && (botWait -= dt) <= 0) { spawnBot(); botWait = BOT.respawn; } // respawns a bit after its body falls
-  if (!zombies.some(z => z.type === 'bot' && !z.dead)) laser.visible = false;
-}
-function updateTracers(dt) {
-  for (let i = tracers.length - 1; i >= 0; i--) {
-    const t = tracers[i]; t.t -= dt; t.l.material.opacity = Math.max(0, t.t / .08);
-    if (t.t <= 0) { scene.remove(t.l); t.l.geometry.dispose(); t.l.material.dispose(); tracers.splice(i, 1); }
-  }
 }
 // called at the end of restart(): sets up whichever mode you picked in the lobby
 function setupMode() {
-  tracers.forEach(t => scene.remove(t.l)); tracers.length = 0; laser.visible = false; botWait = 1.5;
+  botWait = 1.5;
   if (mode === 'dm') { // no shop here, so you start with a loadout: rifle + shotgun (primary), sniper, pistol, knife
     for (const g of [1, 2, 3]) { owned[g] = true; reserve[g] = resMax(g); }
     slotGun[slotOf(2)] = 2; slotGun[slotOf(3)] = 3;
     cur = 2; buildGun(); renderHotbar();
   }
   const tips = mode === 'dm'
-    ? ['Kill the bot as many times as you can before it gets you', 'It respawns with a random gun. Sniper bots show a red laser before they fire']
+    ? ['Kill the bot as many times as you can before it gets you', 'It respawns with a random gun, so watch what it is holding']
     : ['Kill zombies for coins, then spend them in the shop after each wave', 'Grab health, ammo and armor pickups from the pads around the map'];
   $('tip1').textContent = tips[0]; $('tip2').textContent = tips[1];
 }

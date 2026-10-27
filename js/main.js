@@ -54,9 +54,8 @@ function update(dt) {
   }
   if ((crossT -= dt) <= 0) $('cross').style.setProperty('--c', '#fff');
 
-  // deathmatch: keep a bot in the arena, fade shot tracers
+  // deathmatch: keep a bot in the arena
   if (mode === 'dm') updateDM(dt);
-  updateTracers(dt);
 
   // waves (zombie mode only)
   if (mode === 'zombies' && toSpawn > 0 && (spawnT -= dt) <= 0) { spawnZombie(); toSpawn--; spawnT = Math.max(.3, 1.5 - wave * .1); }
