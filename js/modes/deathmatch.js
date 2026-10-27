@@ -1,4 +1,5 @@
-// deathmatch mode: a 4 minute free-for-all between you and 3 bots. Everyone respawns. Highest score at the end wins.
+// deathmatch mode: a 4 minute free-for-all between you and bots. Everyone respawns. Highest score at the end wins.
+// The match starts with you + 1 bot, and the rest join over the first minute until the map's lobby is full.
 // Bots live in the zombies list (type 'bot'), so your bullets, knife, fire and rockets already hurt them.
 // react = how long a bot has to see its target before it shoots. turn = how fast its aim catches up (higher = snappier).
 // lead = how far ahead of a moving target it aims. aimErr = random wobble on each shot, in radians.
@@ -6,9 +7,21 @@
 // moveErr = extra wobble when the target is running (at full speed), so strafing really does make it miss more.
 const BOT = { hp: 100, speed: 5, react: .45, turn: 8, lead: .05, aimErr: .025, moveErr: .045, dmgMul: .5, respawn: 1.5 };
 const SNIPE_T = .9; // a sniper bot lines up its shot this long before it fires
-const MATCH_T = 240, BOT_COUNT = 3, YOU_RESPAWN = 3; // match length (s), number of bots, your respawn wait (s)
-// score: every kill is worth KILL_PTS, headshot kills add HEAD_PTS, and each kill in a row without dying adds STREAK_PTS more
-const KILL_PTS = 100, HEAD_PTS = 50, STREAK_PTS = 25;
+const MATCH_T = 240, YOU_RESPAWN = 3, JOIN_T = 60; // match length (s), your respawn wait (s), bots finish joining by this time (s)
+const BOT_COUNT = MAX_PLAYERS[MAP.size] - 1; // fill the lobby: 3 bots on small maps like the yard, 7 on bigger ones
+// score: every kill is worth KILL_PTS, a headshot kill adds HEAD_PTS.
+// Streaks (kills in a row without dying) add a one-time bonus on the kill that reaches them. Kills in between get no bonus.
+// So your 20th kill in a row is worth 50 + 200 = 250 on its own (plus 50 more if it's a headshot).
+const KILL_PTS = 50, HEAD_PTS = 50;
+const STREAKS = {
+  2: [25, 'DOUBLE KILL'],
+  3: [35, 'TRIPLE KILL'],
+  4: [45, 'MONSTER KILL'],
+  5: [50, 'ACE'],
+  10: [100, '10 KILL STREAK'],
+  20: [200, 'RAMPAGE'],
+  50: [1000, 'VIOLENCE'],
+};
 // guns a bot can spawn with, and the distance it tries to keep from its target with each one [closest, furthest]
 const BOT_GUNS = {
   0: [6, 13],  // pistol
@@ -34,6 +47,9 @@ const BOT_LOOKS = [ // shirt color, name color (used on the tag, leaderboard and
   { shirt: [205, 120, 30], css: '#ffa94a' },
   { shirt: [120, 55, 175], css: '#c08aff' },
   { shirt: [40, 130, 60], css: '#6fdc7f' },
+  { shirt: [40, 90, 190], css: '#6aa8ff' },
+  { shirt: [30, 150, 150], css: '#5fe0d8' },
+  { shirt: [200, 190, 50], css: '#f0e45a' },
 ];
 const shirtTs = BOT_LOOKS.map(l => tex(g => { noise(g, l.shirt, 26); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, 15, 16, 1); }));
 function tagMat(name, css) { // name tag floating over its head
@@ -46,14 +62,22 @@ function tagMat(name, css) { // name tag floating over its head
 
 // ---------- the match: one record per player on the leaderboard ----------
 const YOU_T = { you: true }; // stands in for you whenever a bot is picking or tracking a target
-let recs = [], youRec = null, matchT = 0, killedBy = '';
+let recs = [], youRec = null, matchT = 0, killedBy = '', joins = [];
 function makeRecs() {
   youRec = { name: 'YOU', you: true, css: '#ffd23f', score: 0, kills: 0, deaths: 0, streak: 0 };
-  recs = [youRec];
+  recs = [youRec]; joins = [];
+  // bot 1 is there from the start. The others join spread across the first minute, a little randomly.
   for (let i = 0; i < BOT_COUNT; i++) {
-    const look = BOT_LOOKS[i % BOT_LOOKS.length], name = 'BOT ' + (i + 1);
-    recs.push({ name, css: look.css, look: i % BOT_LOOKS.length, tag: tagMat(name, look.css), score: 0, kills: 0, deaths: 0, streak: 0, b: null, wait: .5 + i * .6 });
+    const at = i === 0 ? 0 : Math.min(JOIN_T - 2, Math.max(5, JOIN_T * i / BOT_COUNT + (Math.random() - .5) * 10));
+    joins.push({ i, at });
   }
+  joins.sort((a, b) => a.at - b.at);
+}
+function joinBot(i) {
+  const n = i % BOT_LOOKS.length, look = BOT_LOOKS[n], name = 'BOT ' + (i + 1);
+  const r = { name, css: look.css, look: n, tag: tagMat(name, look.css), score: 0, kills: 0, deaths: 0, streak: 0, b: null, wait: .5 };
+  recs.push(r);
+  if (MATCH_T - matchT > 1) { feed(`${nameTag(r)} joined`); beep(520, .1, 'triangle', .06); } // no message for the one that starts with you
 }
 const ranked = () => [...recs].sort((a, b) => b.score - a.score || b.kills - a.kills || a.deaths - b.deaths);
 const ord = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'TH' : ['TH', 'ST', 'ND', 'RD'][n % 10] ?? 'TH');
@@ -72,11 +96,17 @@ function scoreKill(killer, victim, head) {
   victim.deaths++; victim.streak = 0;
   if (killer && killer !== victim) {
     killer.kills++; killer.streak++;
-    const pts = KILL_PTS + (head ? HEAD_PTS : 0) + STREAK_PTS * (killer.streak - 1);
+    const st = STREAKS[killer.streak];
+    const pts = KILL_PTS + (head ? HEAD_PTS : 0) + (st ? st[0] : 0);
     killer.score += pts;
-    if (killer.you) { toast(`+${pts}${head ? ' HEADSHOT' : ''}${killer.streak > 1 ? ' · STREAK ' + killer.streak : ''}`, '#ffd23f'); beep(180, .3, 'sawtooth', .12); }
+    if (killer.you) {
+      toast(`+${pts}${head ? ' HEADSHOT' : ''}${st ? ' · ' + st[1] : ''}`, '#ffd23f');
+      beep(st ? 260 + Math.min(killer.streak, 20) * 20 : 180, .3, 'sawtooth', .12); // streak kills sound higher
+    }
   }
   feed(killer && killer !== victim ? `${nameTag(killer)} ${head ? '⌖' : '✖'} ${nameTag(victim)}` : `${nameTag(victim)} ✖`);
+  const st = killer && killer !== victim && STREAKS[killer.streak];
+  if (st) feed(`${nameTag(killer)} <b style="color:#ffd23f">${st[1]}!</b>`); // everyone sees streaks in the feed
 }
 
 // ---------- spawning: somewhere open, as far from everyone else as it can find ----------
@@ -278,6 +308,7 @@ function dmDown(dt) {
 }
 let lastTop = '', lastBoard = '', lastSec = 0;
 function updateDM(dt) {
+  while (joins.length && MATCH_T - matchT >= joins[0].at) joinBot(joins.shift().i); // new bots joining
   for (const r of recs) if (!r.you && (!r.b || r.b.dead) && (r.wait -= dt) <= 0) makeBot(r); // bots come back after their body falls
   matchT -= dt;
   const sec = Math.max(0, Math.ceil(matchT));
@@ -319,7 +350,7 @@ function setupMode() {
   }
   const tab = binds.board.filter(Boolean).map(nice).join('/') || 'the scoreboard key';
   const tips = mode === 'dm'
-    ? [`Free-for-all against ${BOT_COUNT} bots. Highest score when the timer runs out wins`, `Headshots and kill streaks score extra. Hold ${tab} for the leaderboard`]
+    ? [`Free-for-all, up to ${BOT_COUNT + 1} players. More bots join in the first minute. Highest score wins`, `Headshots and kill streaks score extra. Hold ${tab} for the leaderboard`]
     : ['Kill zombies for coins, then spend them in the shop after each wave', 'Grab health, ammo and armor pickups from the pads around the map'];
   $('tip1').textContent = tips[0]; $('tip2').textContent = tips[1];
 }

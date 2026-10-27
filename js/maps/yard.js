@@ -123,6 +123,8 @@ instanced(grassGeo, grassMat, tufts.map(t => { const u = [...t]; u[6] += Math.PI
 // Each map has a fixed layout: same pad spots and same crates every game. A new map = a new entry here.
 // Pad count depends on map size. Each map's pads list must have exactly that many spots.
 const PAD_COUNT = { small: 4, medium: 6, large: 8 };
+// most players a match can have on a map this size (you + bots, later real players too)
+const MAX_PLAYERS = { small: 4, medium: 8, large: 8 };
 const MAPS = {
   yard: {
     size: 'small',
