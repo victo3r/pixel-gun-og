@@ -106,7 +106,7 @@ function botFire(b, W, dist) {
   b.tip.getWorldPosition(muz);
   pBox.min.set(P.pos.x - .35, P.pos.y, P.pos.z - .35); pBox.max.set(P.pos.x + .35, P.pos.y + 1.85, P.pos.z + .35);
   // the sniper's listed spread is its unscoped hip-fire, but the bot lines up its shots, so it gets a tighter cone
-  const err = BOT.aimErr + W.spread * (W.scope ? .1 : .8), walls = [ground, ...crateMeshes];
+  const err = BOT.aimErr + BOT.moveErr * Math.min(1, Math.hypot(b.pvx, b.pvz) / 6) + W.spread * (W.scope ? .1 : .8), walls = [ground, ...crateMeshes];
   for (let i = 0; i < W.pellets; i++) {
     const wob = () => (Math.random() + Math.random() - 1) * err;
     aimDir(b.aimYaw + wob(), b.aimPitch + wob(), dirV);
