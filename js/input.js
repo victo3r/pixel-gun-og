@@ -108,12 +108,33 @@ $('menu').addEventListener('click', () => {
 });
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === renderer.domElement;
-  $('menu').style.display = locked || shopOpen ? 'none' : 'flex';
+  $('menu').style.display = locked || shopOpen || inLobby ? 'none' : 'flex';
   $('shop').style.display = shopOpen && !locked ? 'flex' : 'none';
-  if (!locked) { for (const k in keys) keys[k] = false; $('msg').textContent = dead ? `${newBest ? 'NEW BEST! ' : ''}You died on wave ${wave} with ${kills} kills. Click to try again.` : 'Paused'; }
+  if (!locked) {
+    for (const k in keys) keys[k] = false;
+    $('msg').textContent = dead ? `${newBest ? 'NEW BEST! ' : ''}You died on wave ${wave} with ${kills} kills.` : 'Paused';
+    $('go').textContent = dead ? '[ CLICK TO TRY AGAIN ]' : '[ CLICK TO RESUME ]';
+  }
 });
 // if the browser refuses to re-lock the mouse, show the menu so you can click back in
-document.addEventListener('pointerlockerror', () => { if (!shopOpen) { $('msg').textContent = 'Click to continue'; $('menu').style.display = 'flex'; } });
+document.addEventListener('pointerlockerror', () => { if (!shopOpen && !inLobby) { $('msg').textContent = 'Click to continue'; $('menu').style.display = 'flex'; } });
+
+// ---------- lobby ----------
+// PLAY starts a fresh game in the arena. LOBBY (from the pause or death screen) ends the game and goes back.
+function showLobby(on) {
+  inLobby = on;
+  $('lobby').style.display = on ? 'flex' : 'none';
+  $('hud').style.display = on ? 'none' : '';
+  vm.visible = !on; // hide the gun in your hands while the lobby camera spins
+  if (on) { $('menu').style.display = 'none'; camera.fov = 75; camera.updateProjectionMatrix(); }
+}
+$('playBtn').addEventListener('click', () => {
+  restart(); showLobby(false);
+  renderer.domElement.requestPointerLock()?.catch?.(() => {});
+});
+$('lobbyBtn').addEventListener('click', e => { e.stopPropagation(); restart(); showLobby(true); });
+$('lobbyCtrl').addEventListener('click', () => { rebinding = null; renderBinds(); $('binds').style.display = 'flex'; });
+showLobby(true);
 
 function restart() {
   zombies.forEach(z => scene.remove(z.g)); zombies.length = 0;

@@ -217,6 +217,10 @@ const clock = new THREE.Clock();
 (function loop() {
   requestAnimationFrame(loop);
   const dt = Math.min(clock.getDelta(), .05);
-  if (locked && !dead) update(dt);
+  if (inLobby) { // lobby backdrop: camera slowly circles the yard
+    const t = performance.now() * .00006;
+    camera.position.set(Math.sin(t) * 34, 13, Math.cos(t) * 34);
+    camera.lookAt(0, 1, 0);
+  } else if (locked && !dead) update(dt);
   renderer.render(scene, camera);
 })();
