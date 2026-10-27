@@ -10,18 +10,14 @@
   <div id="toast"></div><div id="arm"></div><div id="hp"></div><div id="ammo"></div><div id="hotbar"></div>
 </div>
 <div id="lobby">
-  <div id="lobbyPanel">
-    <div class="logo"><span class="l1">PIXEL GUN</span><span class="l2">OG</span></div>
-    <p id="lobbyBest"></p>
-    <div class="label">SELECT MODE</div>
-    <div id="modes">
-      <button class="mode sel"><b>ZOMBIE WAVES</b><small>Map: The Yard</small><small>Survive the waves, earn coins, beat the boss every 5 waves</small></button>
-      <button class="mode" disabled><b>MORE MODES</b><small>Coming soon</small></button>
-    </div>
-    <button id="playBtn">▶ PLAY</button>
-    <button id="lobbyCtrl">CONTROLS</button>
+  <h1>PIXEL GUN OG</h1>
+  <p id="lobbyBest"></p>
+  <div id="modes">
+    <button class="mode sel"><b>ZOMBIE WAVES</b><small>Map: The Yard</small><small>Survive the waves, earn coins, beat the boss every 5 waves</small></button>
+    <button class="mode" disabled><b>MORE MODES</b><small>Coming soon</small></button>
   </div>
-  <div id="stage"><div id="stageHint">drag to spin</div></div>
+  <button id="playBtn">▶ PLAY</button>
+  <button id="lobbyCtrl">⚙ CONTROLS</button>
 </div>
 <div id="menu">
   <h1>PIXEL GUN OG</h1>
@@ -31,7 +27,7 @@
   <p>Kill zombies for coins, then spend them in the shop after each wave</p>
   <p>Grab health, ammo and armor pickups from the pads around the map</p>
   <p id="go" style="color:#ffd23f;margin-top:20px">[ CLICK TO RESUME ]</p>
-  <div><button id="ctrlBtn">CONTROLS</button> <button id="lobbyBtn">EXIT GAME</button></div>
+  <div><button id="ctrlBtn">⚙ CONTROLS</button> <button id="lobbyBtn">EXIT GAME</button></div>
 </div>
 <div id="binds">
   <button id="bindX">✕ CLOSE</button>
@@ -55,7 +51,7 @@ window.THREE = THREE;
 // grab the new files instead of mixing in old cached ones.
 const V = 4;
 const FILES = ['js/core.js', 'js/maps/yard.js', 'js/player.js', 'js/weapons.js',
-  'js/modes/zombies.js', 'js/combat.js', 'js/lobby.js', 'js/input.js', 'js/main.js'];
+  'js/modes/zombies.js', 'js/combat.js', 'js/input.js', 'js/main.js'];
 for (const src of FILES) {
   const s = document.createElement('script');
   s.src = src + '?v=' + V; s.async = false; // async=false keeps them running in list order
