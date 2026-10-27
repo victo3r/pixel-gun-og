@@ -10,9 +10,10 @@ const SNIPE_T = .9; // a sniper bot lines up its shot this long before it fires
 const MATCH_T = 240, YOU_RESPAWN = 3, JOIN_T = 60; // match length (s), your respawn wait (s), bots finish joining by this time (s)
 const BOT_COUNT = MAX_PLAYERS[MAP.size] - 1; // fill the lobby: 3 bots on small maps like the yard, 7 on bigger ones
 // score: every kill is worth KILL_PTS, a headshot kill adds HEAD_PTS.
-// Streaks (kills in a row without dying) add a one-time bonus on the kill that reaches them. Kills in between get no bonus.
-// So your 20th kill in a row is worth 50 + 200 = 250 on its own (plus 50 more if it's a headshot).
-const KILL_PTS = 50, HEAD_PTS = 50;
+// Streaks (kills in a row without dying) add a one-time bonus on the kill that reaches them.
+// Once you're past ACE, every kill that doesn't land on a named streak gets STREAK_PTS instead (so 65 instead of 50).
+// So your 20th kill in a row is worth 50 + 200 = 250 on its own (plus 50 more if it's a headshot), and your 7th is worth 65.
+const KILL_PTS = 50, HEAD_PTS = 50, STREAK_PTS = 15, STREAK_PTS_AFTER = 5;
 const STREAKS = {
   2: [25, 'DOUBLE KILL'],
   3: [35, 'TRIPLE KILL'],
@@ -97,7 +98,7 @@ function scoreKill(killer, victim, head) {
   if (killer && killer !== victim) {
     killer.kills++; killer.streak++;
     const st = STREAKS[killer.streak];
-    const pts = KILL_PTS + (head ? HEAD_PTS : 0) + (st ? st[0] : 0);
+    const pts = KILL_PTS + (head ? HEAD_PTS : 0) + (st ? st[0] : killer.streak > STREAK_PTS_AFTER ? STREAK_PTS : 0);
     killer.score += pts;
     if (killer.you) {
       toast(`+${pts}${head ? ' HEADSHOT' : ''}${st ? ' · ' + st[1] : ''}`, '#ffd23f');
