@@ -18,7 +18,7 @@ const STREAKS = {
   3: [35, 'TRIPLE KILL'],
   4: [45, 'MONSTER KILL'],
   5: [50, 'ACE'],
-  10: [100, '10 KILL STREAK'],
+  10: [100, 'FURY'],
   20: [200, 'RAMPAGE'],
   50: [1000, 'VIOLENCE'],
 };
