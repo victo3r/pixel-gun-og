@@ -17,8 +17,8 @@ canvas{width:100vw!important;height:100vh!important;display:block}
 #bossfill{height:100%;width:100%;background:#e33}
 #bossbar span{position:absolute;inset:0;text-align:center;font-size:13px;line-height:16px}
 #menu{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.65);color:#fff;text-align:center;cursor:pointer;text-shadow:2px 2px 0 #000}
-#menu h1{font-size:64px;margin:0 0 10px;color:#ffd23f;text-shadow:5px 5px 0 #b33}
 #menu p{font-size:18px;margin:6px}
+#menu #msg{font-size:34px;font-weight:bold;color:#ffd23f;text-shadow:3px 3px 0 #b33;margin-bottom:10px}
 #shop{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.8);color:#fff;text-shadow:2px 2px 0 #000}
 #shop h1{font-size:56px;margin:0;color:#ffd23f;text-shadow:5px 5px 0 #b33}
 #shopInfo{font-size:20px}
@@ -40,7 +40,7 @@ canvas{width:100vw!important;height:100vh!important;display:block}
 #scope:after{content:"";position:absolute;top:50%;left:0;right:0;height:2px;margin-top:-1px;background:#000}
 /* small-window fixes: menus scroll instead of getting cut off */
 #menu,#shop,#binds{overflow-y:auto;justify-content:flex-start;padding:12px 8px;box-sizing:border-box}
-#menu>h1,#shop>h1,#binds>h1{margin-top:auto!important}#menu>:last-child,#shop>:last-child,#binds>:last-child{margin-bottom:auto!important}
+#menu>:first-child,#shop>h1,#binds>h1{margin-top:auto!important}#menu>:last-child,#shop>:last-child,#binds>:last-child{margin-bottom:auto!important}
 #bindList{grid-template-columns:minmax(100px,190px) minmax(70px,150px) minmax(70px,150px)}
 #items{grid-template-columns:repeat(3,minmax(0,210px))}
 #bindX{position:fixed;top:8px;right:8px;z-index:11}
@@ -59,10 +59,7 @@ canvas{width:100vw!important;height:100vh!important;display:block}
 #lobby{position:fixed;inset:0;display:flex;z-index:5;color:#fff;text-shadow:2px 2px 0 #000}
 #lobbyPanel{width:min(460px,46vw);box-sizing:border-box;padding:24px 30px;display:flex;flex-direction:column;overflow-y:auto;background:linear-gradient(90deg,rgba(3,16,22,.94),rgba(3,16,22,.8) 72%,rgba(3,16,22,0))}
 #lobbyPanel>*{flex-shrink:0}
-.logo{margin-top:auto;line-height:.95}
-.logo .l1{display:block;font-size:60px;font-weight:bold;color:#ffd23f;letter-spacing:2px;text-shadow:4px 4px 0 #b33,8px 8px 0 rgba(0,0,0,.45)}
-.logo .l2{display:inline-block;margin-top:10px;font-size:26px;font-weight:bold;background:#1ea89f;padding:2px 14px;border:3px solid #ffd23f;box-shadow:4px 4px 0 #000;text-shadow:2px 2px 0 #0a4a46}
-#lobbyBest{font-size:16px;color:#ffd23f;margin:14px 0 0;min-height:1em}
+#lobbyBest{font-size:16px;color:#ffd23f;margin:auto 0 0;min-height:1em}
 #lobby .label{margin:16px 0 8px;font-size:13px;letter-spacing:3px;color:#7fe3d8}
 #modes{display:flex;flex-direction:column;gap:8px}
 .mode{font:bold 18px monospace;text-align:left;padding:10px 14px;background:rgba(18,48,54,.85);color:#fff;border:3px solid #2a5a60;border-left-width:8px;display:flex;flex-direction:column;gap:4px;text-shadow:2px 2px 0 #000;cursor:pointer}
@@ -82,11 +79,11 @@ canvas{width:100vw!important;height:100vh!important;display:block}
   #lobbyPanel{width:100%;flex:1;background:rgba(3,16,22,.9);padding:12px 16px}
 }
 @media (max-height:620px),(max-width:700px){
-  .logo .l1{font-size:38px}.logo .l2{font-size:18px;margin-top:6px}#playBtn{font-size:24px;padding:8px 0;margin-top:12px}
+  #playBtn{font-size:24px;padding:8px 0;margin-top:12px}
   #lobby .label{margin:10px 0 6px}.mode{padding:6px 10px;font-size:15px}#lobbyPanel{padding-top:12px;padding-bottom:12px}
 }
 @media (max-height:620px),(max-width:620px){
-  #menu h1,#shop h1{font-size:36px}#binds h1{font-size:28px}#menu p{font-size:14px;margin:3px}
+  #shop h1{font-size:36px}#binds h1{font-size:28px}#menu p{font-size:14px;margin:3px}#menu #msg{font-size:22px}
   #bindList{font-size:13px;gap:3px 6px;margin:6px}#binds button{font-size:12px;padding:3px 6px}
   #shop button{font-size:14px;padding:6px}#items{gap:6px;margin:6px}#banner{font-size:36px}
 }
