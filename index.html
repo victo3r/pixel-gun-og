@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Pixel Gun OG</title>
 <meta http-equiv="Cache-Control" content="no-cache">
-<link id="css" rel="stylesheet" href="css/style.css?v=7">
+<link id="css" rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
 <div id="hud">
@@ -14,7 +14,8 @@
     <p id="lobbyBest"></p>
     <div class="label">SELECT MODE</div>
     <div id="modes">
-      <button class="mode sel"><b>ZOMBIE WAVES</b><small>Map: The Yard</small><small>Survive the waves, earn coins, beat the boss every 5 waves</small></button>
+      <button class="mode sel" data-mode="zombies"><b>ZOMBIE WAVES</b><small>Map: The Yard</small><small>Survive the waves, earn coins, beat the boss every 5 waves</small></button>
+      <button class="mode" data-mode="dm"><b>DEATHMATCH</b><small>Map: The Yard</small><small>1v1 against a bot that aims, strafes and uses real guns</small></button>
       <button class="mode" disabled><b>MORE MODES</b><small>Coming soon</small></button>
     </div>
     <button id="playBtn">▶ PLAY</button>
@@ -26,8 +27,8 @@
   <p id="msg">Paused</p>
   <p id="best" style="color:#ffd23f"></p>
   <p id="help"></p>
-  <p>Kill zombies for coins, then spend them in the shop after each wave</p>
-  <p>Grab health, ammo and armor pickups from the pads around the map</p>
+  <p id="tip1"></p>
+  <p id="tip2"></p>
   <p id="go" style="color:#ffd23f;margin-top:20px">[ CLICK TO RESUME ]</p>
   <div><button id="ctrlBtn">CONTROLS</button> <button id="lobbyBtn">EXIT GAME</button></div>
 </div>
@@ -51,9 +52,9 @@ import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 window.THREE = THREE;
 // Bump V (and the ?v= on the stylesheet above) on every update so browsers
 // grab the new files instead of mixing in old cached ones.
-const V = 7;
+const V = 8;
 const FILES = ['js/core.js', 'js/maps/yard.js', 'js/player.js', 'js/weapons.js',
-  'js/modes/zombies.js', 'js/combat.js', 'js/lobby.js', 'js/input.js', 'js/main.js'];
+  'js/modes/zombies.js', 'js/combat.js', 'js/modes/deathmatch.js', 'js/lobby.js', 'js/input.js', 'js/main.js'];
 for (const src of FILES) {
   const s = document.createElement('script');
   s.src = src + '?v=' + V; s.async = false; // async=false keeps them running in list order

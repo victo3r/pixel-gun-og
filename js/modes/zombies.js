@@ -62,10 +62,11 @@ function spawnZombie(type = pickType()) {
 function hurtZombie(zz, dmg, point, head, quiet = false) {
   zz.hp -= dmg;
   if (quiet) burst(point, 0xff7a1a, 2);
-  else { zz.flash = .1; burst(point, 0x3a8a2a, head ? 8 : 4); setCross('#f44'); }
+  else { zz.flash = .1; burst(point, zz.type === 'bot' ? 0xb01818 : 0x3a8a2a, head ? 8 : 4); setCross('#f44'); }
   if (zz.hp <= 0 && !zz.dead) {
     zz.dead = .0001; kills++; coins += zz.coins + (head ? 2 : 0);
-    if (zz.type === 'exploder') explode(zz); // shooting one still sets it off, so keep your distance
+    if (zz.type === 'bot') botDown(zz); // deathmatch bot (see modes/deathmatch.js)
+    else if (zz.type === 'exploder') explode(zz); // shooting one still sets it off, so keep your distance
     else if (zz.type === 'boss') { beep(60, .9, 'sawtooth', .2); banner(`BOSS DOWN!\n+${zz.coins} ◆`); }
     else beep(zz.type === 'brute' ? 110 : 180, .3, 'sawtooth', .12);
   }
@@ -82,6 +83,7 @@ function hurtPlayer(d, pierce = false) {
 let best = { wave: 0, kills: 0 }, newBest = false;
 try { best = JSON.parse(localStorage.getItem('pgog-best')) ?? best; } catch {}
 function saveBest() {
+  if (mode !== 'zombies') return; // the best score is for zombie waves only
   newBest = wave > best.wave || (wave === best.wave && kills > best.kills);
   if (newBest) { best = { wave, kills }; try { localStorage.setItem('pgog-best', JSON.stringify(best)); } catch {} }
   showBest();

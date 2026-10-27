@@ -54,9 +54,13 @@ function update(dt) {
   }
   if ((crossT -= dt) <= 0) $('cross').style.setProperty('--c', '#fff');
 
-  // waves
-  if (toSpawn > 0 && (spawnT -= dt) <= 0) { spawnZombie(); toSpawn--; spawnT = Math.max(.3, 1.5 - wave * .1); }
-  if (toSpawn === 0 && zombies.length === 0) {
+  // deathmatch: keep a bot in the arena, fade shot tracers
+  if (mode === 'dm') updateDM(dt);
+  updateTracers(dt);
+
+  // waves (zombie mode only)
+  if (mode === 'zombies' && toSpawn > 0 && (spawnT -= dt) <= 0) { spawnZombie(); toSpawn--; spawnT = Math.max(.3, 1.5 - wave * .1); }
+  if (mode === 'zombies' && toSpawn === 0 && zombies.length === 0) {
     if (wave > 0 && shopWave < wave) { shopWave = wave; bonus = 5 + wave * 2; coins += bonus; openShop(); return; }
     if ((waveWait -= dt) <= 0) {
       wave++; toSpawn = Math.round(5 + wave * 2.5); spawnT = 0; waveWait = 3;
@@ -80,6 +84,7 @@ function update(dt) {
       if ((z.burnT = (z.burnT ?? 0) - dt) <= 0) { z.burnT = .25; hurtZombie(z, z.burnDmg, z.g.position.clone().setY(z.scale * 1.2), false, true); }
       if (z.dead) continue;
     }
+    if (z.type === 'bot') { updateBot(z, dt); continue; } // bots have their own brain (modes/deathmatch.js)
     const dx = P.pos.x - z.g.position.x, dz = P.pos.z - z.g.position.z, dist = Math.hypot(dx, dz);
     z.g.rotation.y = Math.atan2(dx, dz);
     // exploders stop, swell and blink when they get close, then blow up. Run!
@@ -210,7 +215,7 @@ function update(dt) {
   const spare = reserve[cur] === Infinity ? '∞' : reserve[cur];
   $('ammo').textContent = `${w.name} ${stars(cur)}\n${w.melee ? 'MELEE' : reloading > 0 ? 'RELOADING' : !ammo[cur] && !reserve[cur] ? 'NO AMMO' : ammo[cur] + ' / ' + spare}`;
   $('ammo').style.whiteSpace = 'pre';
-  $('top').textContent = `WAVE ${wave}   ·   KILLS ${kills}   ·   ◆ ${coins}`;
+  $('top').textContent = mode === 'dm' ? `DEATHMATCH   ·   KILLS ${kills}` : `WAVE ${wave}   ·   KILLS ${kills}   ·   ◆ ${coins}`;
 }
 
 const clock = new THREE.Clock();

@@ -28,4 +28,5 @@ const ARMOR_CAP = 100; // most armor you can buy up to (4 shop buys)
 const P = { pos: new THREE.Vector3(), vy: 0, yaw: 0, pitch: 0, hp: 100, max: 100, armor: 0, maxArmor: 0, onGround: true, kx: 0, kz: 0 }; // kx/kz = knockback
 const keys = {};
 let locked = false, dead = false, inLobby = true; // you start in the lobby, not the arena
+let mode = 'zombies'; // which mode you picked in the lobby: 'zombies' or 'dm' (deathmatch)
 

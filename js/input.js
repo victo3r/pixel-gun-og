@@ -112,7 +112,9 @@ document.addEventListener('pointerlockchange', () => {
   $('shop').style.display = shopOpen && !locked ? 'flex' : 'none';
   if (!locked) {
     for (const k in keys) keys[k] = false;
-    $('msg').textContent = dead ? `${newBest ? 'NEW BEST! ' : ''}You died on wave ${wave} with ${kills} kills.` : 'Paused';
+    $('msg').textContent = !dead ? 'Paused'
+      : mode === 'dm' ? `The bot got you. You scored ${kills} kill${kills === 1 ? '' : 's'}.`
+      : `${newBest ? 'NEW BEST! ' : ''}You died on wave ${wave} with ${kills} kills.`;
     $('go').textContent = dead ? '[ CLICK TO TRY AGAIN ]' : '[ CLICK TO RESUME ]';
   }
 });
@@ -133,6 +135,11 @@ $('playBtn').addEventListener('click', () => {
   renderer.domElement.requestPointerLock()?.catch?.(() => {});
 });
 $('lobbyBtn').addEventListener('click', e => { e.stopPropagation(); restart(); showLobby(true); });
+$('modes').addEventListener('click', e => { // pick a mode; PLAY starts whichever one is highlighted
+  const b = e.target.closest('.mode'); if (!b || b.disabled) return;
+  document.querySelectorAll('.mode').forEach(m => m.classList.toggle('sel', m === b));
+  mode = b.dataset.mode; beep(600, .05);
+});
 $('lobbyCtrl').addEventListener('click', () => { rebinding = null; renderBinds(); $('binds').style.display = 'flex'; });
 showLobby(true);
 
@@ -146,5 +153,6 @@ function restart() {
   WEAPONS.forEach((w, i) => { lvl[i] = 0; applyLvl(i); ammo[i] = w.mag; owned[i] = !!w.def; reserve[i] = w.def ? Infinity : 0; }); reloading = 0; newBest = false;
   emptyPads();
   cur = 0; resetSlots(); buildGun(); renderHotbar();
+  setupMode(); // deathmatch loadout, pause-menu tips (modes/deathmatch.js)
 }
 
