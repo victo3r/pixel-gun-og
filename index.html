@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Pixel Gun OG</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="hud">
+  <div id="hit"></div><div id="scope"></div><div id="cross"></div>
+  <div id="top"></div><div id="bossbar"><div id="bossfill"></div><span>BOSS</span></div><div id="banner"></div>
+  <div id="toast"></div><div id="arm"></div><div id="hp"></div><div id="ammo"></div><div id="hotbar"></div>
+</div>
+<div id="menu">
+  <h1>PIXEL GUN OG</h1>
+  <p id="msg">Survive the zombie waves</p>
+  <p id="best" style="color:#ffd23f"></p>
+  <p id="help"></p>
+  <p>Kill zombies for coins, then spend them in the shop after each wave</p>
+  <p>Grab health, ammo and armor pickups from the pads around the map</p>
+  <p style="color:#ffd23f;margin-top:20px">[ CLICK TO PLAY ]</p>
+  <button id="ctrlBtn">⚙ CONTROLS</button>
+</div>
+<div id="binds">
+  <button id="bindX">✕ CLOSE</button>
+  <h1>CONTROLS</h1>
+  <small>Click a box, then press a key, mouse button or scroll. Backspace clears it, Esc cancels.</small>
+  <div id="bindList"></div>
+  <div><button id="bindReset">RESET DEFAULTS</button> <button id="bindDone">DONE</button></div>
+</div>
+<div id="shop">
+  <h1>SHOP</h1>
+  <p id="shopInfo"></p>
+  <div id="items"></div>
+  <button id="next">NEXT WAVE ▶</button>
+</div>
+<script type="module">
+// Three.js only ships as a module, so load it here, make it global,
+// then load the game files in order as plain scripts (works from file://).
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+window.THREE = THREE;
+const FILES = ['js/core.js', 'js/maps/yard.js', 'js/player.js', 'js/weapons.js',
+  'js/modes/zombies.js', 'js/combat.js', 'js/input.js', 'js/main.js'];
+for (const src of FILES) {
+  const s = document.createElement('script');
+  s.src = src; s.async = false; // async=false keeps them running in list order
+  document.body.append(s);
+}
+</script>
+</body></html>
