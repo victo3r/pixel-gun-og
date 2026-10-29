@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Pixel Gun OG</title>
 <meta http-equiv="Cache-Control" content="no-cache">
-<link id="css" rel="stylesheet" href="css/style.css?v=17">
+<link id="css" rel="stylesheet" href="css/style.css?v=18">
 </head>
 <body>
 <div id="hud">
   <div id="hit"></div><div id="scope"></div><div id="cross"></div>
   <div id="top"></div><div id="bossbar"><div id="bossfill"></div><span>BOSS</span></div><div id="banner"></div>
   <div id="board" class="lb"></div><div id="feed"></div>
+  <div id="chat"><div id="chatLog"></div><input id="chatIn" maxlength="80" autocomplete="off" spellcheck="false"></div>
   <div id="toast"></div><div id="arm"></div><div id="hp"></div><div id="ammo"></div><div id="hotbar"></div>
 </div>
 <div id="lobby">
   <div id="lobbyPanel">
     <div id="prof"></div>
+    <div id="nameRow"><input id="nameIn" maxlength="16" autocomplete="off" spellcheck="false"><button id="nameDice" title="Random name">🎲</button></div>
     <p id="lobbyBest"></p>
     <div class="label">SELECT MODE</div>
     <div id="modes">
@@ -66,9 +68,9 @@ import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 window.THREE = THREE;
 // Bump V (and the ?v= on the stylesheet above) on every update so browsers
 // grab the new files instead of mixing in old cached ones.
-const V = 17;
-const FILES = ['js/core.js', 'js/profile.js', 'js/maps/world.js', 'js/maps/yard.js', 'js/maps/forest.js','js/player.js', 'js/weapons.js',
-  'js/modes/zombies.js', 'js/combat.js', 'js/modes/deathmatch.js', 'js/lobby.js', 'js/input.js', 'js/main.js'];
+const V = 18;
+const FILES = ['js/core.js', 'js/profile.js', 'js/names.js', 'js/maps/world.js', 'js/maps/yard.js', 'js/maps/forest.js','js/player.js', 'js/weapons.js',
+  'js/modes/zombies.js', 'js/combat.js', 'js/modes/deathmatch.js', 'js/chat.js', 'js/lobby.js', 'js/input.js', 'js/main.js'];
 for (const src of FILES) {
   const s = document.createElement('script');
   s.src = src + '?v=' + V; s.async = false; // async=false keeps them running in list order

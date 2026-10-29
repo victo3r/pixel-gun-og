@@ -6,7 +6,7 @@ const ACTIONS = [
   ['shoot', 'Shoot'], ['aim', 'Aim / scope'], ['reload', 'Reload'], ['next', 'Next gun'], ['prev', 'Previous gun'],
   ['lookL', 'Look left'], ['lookR', 'Look right'], ['lookU', 'Look up'], ['lookD', 'Look down'],
   ['slot1', 'Primary slot'], ['slot2', 'Backup slot'], ['slot3', 'Melee slot'], ['slot4', 'Special slot'], ['slot5', 'Sniper slot'], ['slot6', 'Premium slot'],
-  ['board', 'Leaderboard (hold)'],
+  ['board', 'Leaderboard (hold)'], ['chat', 'Chat'],
 ];
 const DEFAULT_BINDS = {
   fwd: ['KeyW', ''], back: ['KeyS', ''], left: ['KeyA', ''], right: ['KeyD', ''], jump: ['Space', ''],
@@ -14,7 +14,7 @@ const DEFAULT_BINDS = {
   next: ['WheelDown', 'KeyE'], prev: ['WheelUp', 'KeyQ'],
   lookL: ['ArrowLeft', ''], lookR: ['ArrowRight', ''], lookU: ['ArrowUp', ''], lookD: ['ArrowDown', ''],
   slot1: ['Digit1', ''], slot2: ['Digit2', ''], slot3: ['Digit3', ''], slot4: ['Digit4', ''], slot5: ['Digit5', ''], slot6: ['Digit6', ''],
-  board: ['Tab', ''],
+  board: ['Tab', ''], chat: ['KeyT', 'Enter'],
 };
 const copyBinds = b => Object.fromEntries(Object.entries(b).map(([k, v]) => [k, [...v]]));
 let binds = copyBinds(DEFAULT_BINDS);
@@ -64,7 +64,8 @@ addEventListener('keydown', e => { if (e.code === 'Escape' && !rebinding && $('b
 
 // ---------- input ----------
 function press(code) { // one-shot actions fire on the press, held actions are read every frame in update()
-  if (!locked) return;
+  if (!locked || chatting) return;
+  if (isBind('chat', code)) { openChat(); if (chatting) return; }
   if (isBind('shoot', code)) shoot();
   if (isBind('reload', code)) reload();
   if (isBind('next', code)) cycle(1);
@@ -77,7 +78,9 @@ addEventListener('keydown', e => {
     assign(e.code === 'Escape' ? null : (e.code === 'Backspace' || e.code === 'Delete') ? '' : e.code);
     return;
   }
-  if (locked && (e.code === 'Space' || e.code.startsWith('Arrow') || e.code === 'Tab')) e.preventDefault();
+  if (chatting) return; // the chat box handles its own keys (js/chat.js)
+  if (locked && (e.code === 'Space' || e.code.startsWith('Arrow') || e.code === 'Tab' || isBind('chat', e.code))) e.preventDefault(); // so the T doesn't get typed into chat
+  if (e.target.tagName === 'INPUT') return; // typing your name in the lobby
   if (e.repeat) return;
   keys[e.code] = true;
   press(e.code);
@@ -86,6 +89,7 @@ addEventListener('keyup', e => keys[e.code] = false);
 addEventListener('mousedown', e => {
   const code = 'Mouse' + e.button;
   if (rebinding) { if (!e.target.closest('#bindReset,#bindDone,#bindX')) { e.preventDefault(); assign(code); } return; }
+  if (chatting) { e.preventDefault(); return; } // clicking while typing doesn't shoot or steal focus from the chat box
   keys[code] = true; press(code);
 });
 addEventListener('mouseup', e => keys['Mouse' + e.button] = false);
@@ -149,6 +153,14 @@ $('maps').addEventListener('click', e => {
   const b = e.target.closest('.map'); if (!b) return;
   mapId = b.dataset.map; localStorage.setItem('pg_map', mapId); markMap(); beep(600, .05);
 });
+// your name: saves when you click away or press Enter. Blank goes back to the old one. 🎲 rolls a random one.
+$('nameIn').value = myName;
+const saveName = () => { $('nameIn').value = setMyName($('nameIn').value); };
+$('nameIn').addEventListener('change', saveName);
+$('nameIn').addEventListener('blur', saveName);
+$('nameIn').addEventListener('keydown', e => { if (e.code === 'Enter' || e.code === 'NumpadEnter') $('nameIn').blur(); });
+$('nameDice').addEventListener('click', () => { $('nameIn').value = setMyName(nameMaker([myName])().name); beep(600, .05); });
+document.addEventListener('pointerlockchange', () => { if (document.activeElement === $('nameIn')) $('nameIn').blur(); });
 $('lobbyCtrl').addEventListener('click', () => { rebinding = null; renderBinds(); $('binds').style.display = 'flex'; });
 showLobby(true);
 

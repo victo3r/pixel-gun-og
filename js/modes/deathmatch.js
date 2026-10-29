@@ -60,32 +60,39 @@ const BOT_LOOKS = [ // shirt color, name color (used on the tag, leaderboard and
   { shirt: [200, 190, 50], css: '#f0e45a' },
 ];
 const shirtTs = BOT_LOOKS.map(l => tex(g => { noise(g, l.shirt, 26); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, 15, 16, 1); }));
-function tagMat(name, css) { // name tag floating over its head
-  const c = document.createElement('canvas'); c.width = 96; c.height = 16;
-  const g = c.getContext('2d'); g.font = 'bold 13px monospace'; g.textAlign = 'center';
-  g.fillStyle = '#000'; g.fillText(name, 49, 13); g.fillStyle = css; g.fillText(name, 48, 12);
+const TAG_FONT = 'bold 13px monospace';
+function tagMat(name, css) { // name tag floating over its head, as wide as the name needs. Returns { mat, w } (w in world units)
+  const c = document.createElement('canvas'), g = c.getContext('2d');
+  g.font = TAG_FONT; c.width = Math.ceil(g.measureText(name).width) + 6; c.height = 16;
+  g.font = TAG_FONT; g.textAlign = 'center'; // resizing the canvas resets the font
+  g.fillStyle = '#000'; g.fillText(name, c.width / 2 + 1, 13); g.fillStyle = css; g.fillText(name, c.width / 2, 12);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.NearestFilter;
-  return new THREE.SpriteMaterial({ map: t, transparent: true });
+  return { mat: new THREE.SpriteMaterial({ map: t, transparent: true }), w: c.width / 64 }; // 64 canvas px = 1 block, same as before
 }
 
 // ---------- the match: one record per player on the leaderboard ----------
 const YOU_T = { you: true }; // stands in for you whenever a bot is picking or tracking a target
 let recs = [], youRec = null, matchT = 0, killedBy = '', joins = [];
 function makeRecs() {
-  youRec = { name: 'YOU', you: true, css: '#ffd23f', score: 0, kills: 0, deaths: 0, streak: 0 };
+  youRec = { name: myName, you: true, css: '#ffd23f', score: 0, kills: 0, deaths: 0, streak: 0 };
   recs = [youRec]; joins = [];
-  // bot 1 is there from the start. The others join spread across the first minute, a little randomly.
+  // bot 1 is there from the start and has an obvious bot name (it never chats).
+  // The others join spread across the first minute, a little randomly, with real-looking names (js/names.js).
+  const next = nameMaker([myName]);
   for (let i = 0; i < BOT_COUNT; i++) {
     const at = i === 0 ? 0 : Math.min(JOIN_T - 2, Math.max(5, JOIN_T * i / BOT_COUNT + (Math.random() - .5) * 10));
-    joins.push({ i, at });
+    const nm = i === 0 ? { name: defaultBotName(), lang: 'en', quiet: true } : next();
+    joins.push({ i, at, ...nm });
   }
   joins.sort((a, b) => a.at - b.at);
 }
-function joinBot(i) {
-  const n = i % BOT_LOOKS.length, look = BOT_LOOKS[n], name = 'BOT ' + (i + 1);
-  const r = { name, css: look.css, look: n, tag: tagMat(name, look.css), score: 0, kills: 0, deaths: 0, streak: 0, b: null, wait: .5 };
+function joinBot(j) {
+  const n = j.i % BOT_LOOKS.length, look = BOT_LOOKS[n], tag = tagMat(j.name, look.css);
+  const r = { name: j.name, lang: j.lang, quiet: !!j.quiet, css: look.css, look: n, tag: tag.mat, tagW: tag.w,
+    score: 0, kills: 0, deaths: 0, streak: 0, b: null, wait: .5 };
   recs.push(r);
   if (MATCH_T - matchT > 1) { feed(`${nameTag(r)} joined`); beep(520, .1, 'triangle', .06); } // no message for the one that starts with you
+  botSay(r, 'hi', .3, 2 + Math.random() * 4);
 }
 const ranked = () => [...recs].sort((a, b) => b.score - a.score || b.kills - a.kills || a.deaths - b.deaths);
 const ord = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'TH' : ['TH', 'ST', 'ND', 'RD'][n % 10] ?? 'TH');
@@ -115,6 +122,12 @@ function scoreKill(killer, victim, head) {
   feed(killer && killer !== victim ? `${nameTag(killer)} ${head ? '⌖' : '✖'} ${nameTag(victim)}` : `${nameTag(victim)} ✖`);
   const st = killer && killer !== victim && STREAKS[killer.streak];
   if (st) feed(`${nameTag(killer)} <b style="color:#ffd23f">${st[1]}!</b>`); // everyone sees streaks in the feed
+  // bots sometimes react in chat: more often when it's you that got them, or they got you
+  if (killer && killer !== victim) {
+    botSay(victim, 'died', killer.you ? .2 : .07);
+    if (st && killer.streak >= 5) botSay(killer, 'streak', .4);
+    else botSay(killer, 'kill', victim.you ? .15 : .04);
+  }
 }
 
 // ---------- spawning: somewhere open, as far from everyone else as it can find ----------
@@ -145,7 +158,7 @@ function makeBot(rec) {
   const [pivL, legL] = mkLeg(-.13), [pivR, legR] = mkLeg(.13);
   const gunM = box(.09, .13, W.len, lam({ color: W.color })); gunM.position.set(.16, 1.33, .42 + W.len / 2);
   const flashM = box(.14, .14, .14, new THREE.MeshBasicMaterial({ color: 0xffdd55 })); flashM.position.set(.16, 1.33, .47 + W.len); flashM.visible = false;
-  const tag = new THREE.Sprite(rec.tag); tag.scale.set(1.5, .25, 1); tag.position.y = 2.25;
+  const tag = new THREE.Sprite(rec.tag); tag.scale.set(rec.tagW, .25, 1); tag.position.y = 2.25;
   g.add(head, body, armL, armR, pivL, pivR, gunM, flashM, tag); scene.add(g);
   const yaw = Math.atan2(-x, -z); // face the middle of the map
   g.rotation.y = yaw;
@@ -317,7 +330,8 @@ function dmDown(dt) {
 let lastTop = '', lastBoard = '', lastSec = 0;
 function updateDM(dt) {
   if (matchOver) return; // the mouse can stay locked for a frame or two after the end, don't pay out twice
-  while (joins.length && MATCH_T - matchT >= joins[0].at) joinBot(joins.shift().i); // new bots joining
+  while (joins.length && MATCH_T - matchT >= joins[0].at) joinBot(joins.shift()); // new bots joining
+  chatTick(dt); // bot chat lines that are due
   for (const r of recs) if (!r.you && (!r.b || r.b.dead) && (r.wait -= dt) <= 0) makeBot(r); // bots come back after their body falls
   matchT -= dt;
   const sec = Math.max(0, Math.ceil(matchT));
@@ -335,7 +349,7 @@ function updateDM(dt) {
 }
 // time's up: post-game screen with the final leaderboard and what you earned
 function endMatch() {
-  matchOver = true; $('board').style.display = 'none'; $('banner').style.opacity = 0;
+  matchOver = true; closeChat(); $('board').style.display = 'none'; $('banner').style.opacity = 0;
   const place = ranked().indexOf(youRec) + 1;
   $('postPlace').textContent = place === 1 ? '1ST PLACE!' : ord(place) + ' PLACE';
   $('postBoard').innerHTML = boardHTML();
@@ -354,7 +368,9 @@ $('postLobby').addEventListener('click', () => { restart(); showLobby(true); });
 function setupMode() {
   matchOver = false; respawnT = 0; lastTop = lastBoard = ''; killedBy = '';
   BOT_COUNT = MAX_PLAYERS[MAP.size] - 1;
-  $('post').style.display = 'none'; $('board').style.display = 'none'; $('banner').style.opacity = 0; // clears "KILLED BY" if you left while dead $('feed').innerHTML = ''; $('top').innerHTML = '';
+  $('post').style.display = 'none'; $('board').style.display = 'none'; $('banner').style.opacity = 0; // clears "KILLED BY" if you left while dead
+  $('feed').innerHTML = ''; $('top').innerHTML = ''; resetChat();
+  $('chat').style.display = mode === 'dm' ? '' : 'none'; // nobody to talk to in zombie waves
   if (mode === 'dm') { // no shop here, so you start with a loadout: rifle + shotgun (primary), sniper, pistol, knife
     makeRecs(); matchT = MATCH_T;
     for (const g of [1, 2, 3]) { owned[g] = true; reserve[g] = resMax(g); }
