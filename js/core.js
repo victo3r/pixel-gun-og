@@ -12,7 +12,7 @@ scene.fog = new THREE.Fog(0x87ceeb, 35, 120); // pushed back so the trees and to
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.05, 200);
 camera.rotation.order = 'YXZ';
 scene.add(camera);
-scene.add(new THREE.HemisphereLight(0xffffff, 0x556633, 1.1));
+const hemi = new THREE.HemisphereLight(0xffffff, 0x556633, 1.1); scene.add(hemi); // each map sets its own sky, fog and light (maps/world.js)
 const sun = new THREE.DirectionalLight(0xffffff, 1.3); sun.position.set(10, 20, 5); scene.add(sun);
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 

@@ -101,6 +101,10 @@ canvas{width:100vw!important;height:100vh!important;display:block}
 .mode.sel{border-color:#ffd23f;background:rgba(28,88,86,.9);box-shadow:0 0 14px rgba(47,230,210,.35)}
 .mode:disabled{opacity:.45;cursor:default}
 .mode small{color:#bcd;font-size:12px;font-weight:normal}
+#maps{display:flex;gap:8px}
+.map{flex:1;font:bold 15px monospace;text-align:left;padding:8px 10px;background:rgba(18,48,54,.85);color:#fff;border:3px solid #2a5a60;border-bottom-width:6px;display:flex;flex-direction:column;gap:3px;text-shadow:2px 2px 0 #000;cursor:pointer}
+.map.sel{border-color:#ffd23f;background:rgba(28,88,86,.9);box-shadow:0 0 14px rgba(47,230,210,.35)}
+.map small{color:#bcd;font-size:12px;font-weight:normal}
 #playBtn{margin-top:18px;font:bold 34px monospace;padding:12px 0;background:#2f8a2f;color:#fff;border:4px solid #ffd23f;cursor:pointer;text-shadow:3px 3px 0 #000;box-shadow:inset 0 -6px 0 #1d5e1d,inset 0 4px 0 #57c157,5px 5px 0 #000}
 #playBtn:hover{background:#3aa53a}
 #playBtn:active{transform:translate(3px,3px);box-shadow:inset 0 -6px 0 #1d5e1d,inset 0 4px 0 #57c157,2px 2px 0 #000}

@@ -8,7 +8,7 @@
 const BOT = { hp: 100, speed: 5, react: .45, turn: 8, lead: .05, aimErr: .025, moveErr: .045, dmgMul: .5, respawn: 1.5 };
 const SNIPE_T = .9; // a sniper bot lines up its shot this long before it fires
 const MATCH_T = 240, YOU_RESPAWN = 3, JOIN_T = 60; // match length (s), your respawn wait (s), bots finish joining by this time (s)
-const BOT_COUNT = MAX_PLAYERS[MAP.size] - 1; // fill the lobby: 3 bots on small maps like the yard, 7 on bigger ones
+let BOT_COUNT = 3; // fill the lobby: 3 bots on small maps like the yard, 7 on bigger ones (set in setupMode from the map)
 // score: every kill is worth KILL_PTS, a headshot kill adds HEAD_PTS.
 // Streaks (kills in a row without dying) add a one-time bonus on the kill that reaches them.
 // Once you're past ACE, every kill that doesn't land on a named streak gets STREAK_PTS instead (so 65 instead of 50).
@@ -353,7 +353,8 @@ $('postLobby').addEventListener('click', () => { restart(); showLobby(true); });
 // called at the end of restart(): sets up whichever mode you picked in the lobby
 function setupMode() {
   matchOver = false; respawnT = 0; lastTop = lastBoard = ''; killedBy = '';
-  $('post').style.display = 'none'; $('board').style.display = 'none'; $('feed').innerHTML = ''; $('top').innerHTML = '';
+  BOT_COUNT = MAX_PLAYERS[MAP.size] - 1;
+  $('post').style.display = 'none'; $('board').style.display = 'none'; $('banner').style.opacity = 0; // clears "KILLED BY" if you left while dead $('feed').innerHTML = ''; $('top').innerHTML = '';
   if (mode === 'dm') { // no shop here, so you start with a loadout: rifle + shotgun (primary), sniper, pistol, knife
     makeRecs(); matchT = MATCH_T;
     for (const g of [1, 2, 3]) { owned[g] = true; reserve[g] = resMax(g); }

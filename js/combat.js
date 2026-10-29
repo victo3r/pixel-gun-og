@@ -1,7 +1,7 @@
 // shooting and pickups
 // ---------- shooting ----------
 const ray = new THREE.Raycaster(), ray2 = new THREE.Raycaster(), ndc = new THREE.Vector2(), fwd = new THREE.Vector3(), tmp = new THREE.Vector3();
-const crateMeshes = solids.filter(s => s.mesh).map(s => s.mesh); // crates never move, so build this once
+// crateMeshes = whatever stops bullets on the loaded map (crates, tree trunks, rocks...), set by useMap in maps/world.js
 function shotTargets() { const t = [ground, ...crateMeshes]; for (const zz of zombies) if (!zz.dead) t.push(...zz.parts); return t; }
 function shoot() {
   const w = WEAPONS[cur];
@@ -89,9 +89,15 @@ const PICKUPS = {
 };
 const HEAL_PICK = 30, ARMOR_PICK = 25, RESPAWN = 20, FIRST_SPAWN = 15; // pads start empty; first pickups show up 15-25s in
 const pads = [], padGeo = new THREE.CylinderGeometry(.7, .7, .05, 16), padMat = lam({ color: 0x555555 }), pickGeo = new THREE.BoxGeometry(.45, .45, .45);
-for (const [x, z] of MAP.pads) { // same spots every game on this map
-  const pad = new THREE.Mesh(padGeo, padMat); pad.position.set(x, .025, z); scene.add(pad);
-  pads.push({ x, z, item: null, type: '', t: 0 });
+let padsFor = null;
+function setupPads() { // the loaded map's pads: same spots every game on that map
+  if (padsFor === MAP) return;
+  for (const p of pads) { clearPad(p); scene.remove(p.mesh); }
+  pads.length = 0; padsFor = MAP;
+  for (const [x, z] of MAP.pads) {
+    const mesh = new THREE.Mesh(padGeo, padMat); mesh.position.set(x, .07, z); scene.add(mesh);
+    pads.push({ x, z, mesh, item: null, type: '', t: 0 });
+  }
 }
 function pickupType() { // ammo only once you own a gun that uses it, armor only once you've bought some
   const opts = ['health', 'health'];
@@ -123,5 +129,5 @@ function usePickup(type) {
 }
 let toastT;
 function toast(text, color) { const t = $('toast'); t.textContent = text; t.style.color = color; t.style.opacity = 1; clearTimeout(toastT); toastT = setTimeout(() => t.style.opacity = 0, 900); }
-emptyPads();
+setupPads(); emptyPads();
 

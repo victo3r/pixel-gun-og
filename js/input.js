@@ -141,6 +141,14 @@ $('modes').addEventListener('click', e => { // pick a mode; PLAY starts whicheve
   document.querySelectorAll('.mode').forEach(m => m.classList.toggle('sel', m === b));
   mode = b.dataset.mode; beep(600, .05);
 });
+// pick a map; it remembers your choice for next time
+const markMap = () => document.querySelectorAll('.map').forEach(m => m.classList.toggle('sel', m.dataset.map === mapId));
+if (!MAPS[mapId]) mapId = 'yard';
+markMap();
+$('maps').addEventListener('click', e => {
+  const b = e.target.closest('.map'); if (!b) return;
+  mapId = b.dataset.map; localStorage.setItem('pg_map', mapId); markMap(); beep(600, .05);
+});
 $('lobbyCtrl').addEventListener('click', () => { rebinding = null; renderBinds(); $('binds').style.display = 'flex'; });
 showLobby(true);
 
@@ -149,6 +157,8 @@ function restart() {
   booms.forEach(b => scene.remove(b.m)); booms.length = 0;
   rockets.forEach(r => scene.remove(r.m)); rockets.length = 0;
   flames.forEach(f => scene.remove(f.m)); flames.length = 0;
+  parts.forEach(p => scene.remove(p.m)); parts.length = 0;
+  useMap(mapId); setupPads(); // load the map you picked in the lobby
   Object.assign(P, { vy: 0, yaw: 0, pitch: 0, hp: 100, max: 100, armor: 0, maxArmor: 0, kx: 0, kz: 0 }); P.pos.set(0, 0, 0);
   wave = 0; toSpawn = 0; waveWait = 1.5; kills = 0; coins = 0; dead = false; shopWave = 0; shopOpen = false; armorBought = 0;
   WEAPONS.forEach((w, i) => { lvl[i] = 0; applyLvl(i); ammo[i] = w.mag; owned[i] = !!w.def; reserve[i] = w.def ? Infinity : 0; }); reloading = 0; newBest = false;

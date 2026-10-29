@@ -164,6 +164,8 @@ function update(dt) {
     if (z.tankMat && z.flash <= 0) z.tankMat.emissive.setHex(Math.sin(performance.now() * .008) > 0 ? 0x771100 : 0);
   }
 
+  MAP.tick?.(dt); // map scenery that moves (forest fireflies and lanterns)
+
   // pickups: spin and bob, grab by walking over them
   const now = performance.now();
   for (const p of pads) {

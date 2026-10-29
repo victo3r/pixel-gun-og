@@ -29,5 +29,6 @@ const P = { pos: new THREE.Vector3(), vy: 0, yaw: 0, pitch: 0, hp: 100, max: 100
 const keys = {};
 let locked = false, dead = false, inLobby = true; // you start in the lobby, not the arena
 let mode = 'zombies'; // which mode you picked in the lobby: 'zombies' or 'dm' (deathmatch)
+let mapId = localStorage.getItem('pg_map') || 'yard'; // which map you picked in the lobby (see maps/)
 let respawnT = 0, matchOver = false; // deathmatch: seconds until you respawn (0 = alive), and whether the timer has run out
 
