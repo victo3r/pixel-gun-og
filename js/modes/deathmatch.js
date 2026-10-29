@@ -23,6 +23,13 @@ const STREAKS = {
   20: [200, 'RAMPAGE'],
   50: [1000, 'VIOLENCE'],
 };
+// match rewards by map size: [xp, coins] for each place, the last entry covers every place below it
+const REWARDS = {
+  small:  [[30, 5], [15, 2]],                    // 1st, everyone else
+  medium: [[40, 8], [30, 5], [30, 5], [15, 2]],  // 1st, 2nd, 3rd, everyone else
+  large:  [[40, 8], [30, 5], [30, 5], [15, 2]],
+};
+const rewardFor = place => { const t = REWARDS[MAP.size]; return t[Math.min(place, t.length) - 1]; };
 // guns a bot can spawn with, and the distance it tries to keep from its target with each one [closest, furthest]
 const BOT_GUNS = {
   0: [6, 13],  // pistol
@@ -309,6 +316,7 @@ function dmDown(dt) {
 }
 let lastTop = '', lastBoard = '', lastSec = 0;
 function updateDM(dt) {
+  if (matchOver) return; // the mouse can stay locked for a frame or two after the end, don't pay out twice
   while (joins.length && MATCH_T - matchT >= joins[0].at) joinBot(joins.shift().i); // new bots joining
   for (const r of recs) if (!r.you && (!r.b || r.b.dead) && (r.wait -= dt) <= 0) makeBot(r); // bots come back after their body falls
   matchT -= dt;
@@ -325,15 +333,18 @@ function updateDM(dt) {
   if (show) { const h = boardHTML(); if (h !== lastBoard) $('board').innerHTML = lastBoard = h; }
   if (matchT <= 0) endMatch();
 }
-// time's up: post-game screen with the final leaderboard (match rewards will go under it later)
+// time's up: post-game screen with the final leaderboard and what you earned
 function endMatch() {
   matchOver = true; $('board').style.display = 'none'; $('banner').style.opacity = 0;
   const place = ranked().indexOf(youRec) + 1;
   $('postPlace').textContent = place === 1 ? '1ST PLACE!' : ord(place) + ' PLACE';
   $('postBoard').innerHTML = boardHTML();
-  $('rewards').innerHTML = ''; // match rewards go here (not built yet)
+  const [xp, gold] = rewardFor(place), ups = grant(xp, gold);
+  $('rewards').innerHTML = `<div class="rw"><span class="rx">+${xp} XP</span><span class="pc">+${gold} ◆</span></div>`
+    + (ups ? `<div class="lvup">LEVEL UP! LVL ${prof.lv}</div>` : `<div class="rl">LVL ${prof.lv} · ${prof.xp} / ${xpNeed(prof.lv)} XP</div>`) + xpBar();
   $('post').style.display = 'flex';
   beep(place === 1 ? 880 : 330, .6, 'triangle', .15);
+  if (ups) setTimeout(() => beep(1040, .4, 'triangle', .14), 350); // extra chime for a level up
   document.exitPointerLock();
 }
 $('againBtn').addEventListener('click', () => { restart(); renderer.domElement.requestPointerLock()?.catch?.(() => {}); });

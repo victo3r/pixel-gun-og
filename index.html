@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Pixel Gun OG</title>
 <meta http-equiv="Cache-Control" content="no-cache">
-<link id="css" rel="stylesheet" href="css/style.css?v=13">
+<link id="css" rel="stylesheet" href="css/style.css?v=14">
 </head>
 <body>
 <div id="hud">
@@ -12,6 +12,7 @@
 </div>
 <div id="lobby">
   <div id="lobbyPanel">
+    <div id="prof"></div>
     <p id="lobbyBest"></p>
     <div class="label">SELECT MODE</div>
     <div id="modes">
@@ -60,8 +61,8 @@ import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 window.THREE = THREE;
 // Bump V (and the ?v= on the stylesheet above) on every update so browsers
 // grab the new files instead of mixing in old cached ones.
-const V = 13;
-const FILES = ['js/core.js', 'js/maps/yard.js', 'js/player.js', 'js/weapons.js',
+const V = 14;
+const FILES = ['js/core.js', 'js/profile.js', 'js/maps/yard.js', 'js/player.js', 'js/weapons.js',
   'js/modes/zombies.js', 'js/combat.js', 'js/modes/deathmatch.js', 'js/lobby.js', 'js/input.js', 'js/main.js'];
 for (const src of FILES) {
   const s = document.createElement('script');
