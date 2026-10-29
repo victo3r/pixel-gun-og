@@ -159,7 +159,7 @@ const saveName = () => { $('nameIn').value = setMyName($('nameIn').value); };
 $('nameIn').addEventListener('change', saveName);
 $('nameIn').addEventListener('blur', saveName);
 $('nameIn').addEventListener('keydown', e => { if (e.code === 'Enter' || e.code === 'NumpadEnter') $('nameIn').blur(); });
-$('nameDice').addEventListener('click', () => { $('nameIn').value = setMyName(nameMaker([myName])().name); beep(600, .05); });
+$('nameDice').addEventListener('click', () => { $('nameIn').value = setMyName(newMyName(myName)); beep(600, .05); });
 document.addEventListener('pointerlockchange', () => { if (document.activeElement === $('nameIn')) $('nameIn').blur(); });
 $('lobbyCtrl').addEventListener('click', () => { rebinding = null; renderBinds(); $('binds').style.display = 'flex'; });
 showLobby(true);

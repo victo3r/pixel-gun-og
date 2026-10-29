@@ -1,6 +1,6 @@
 // chat (deathmatch only): press the chat key (T or Enter) to type, Enter sends (an empty line just closes it), Esc closes it.
-// Bots chat too, now and then: saying hi when they join, reacting when they die or get a kill, and answering a few
-// things you say. Bots with names in another language usually talk in that language. "Bot Alpha" never talks.
+// Bots chat too, now and then: reacting when they die or get a kill, and answering a few things you say
+// (including "hi"). Bots with names in another language usually talk in that language. The NATO-named bot never talks.
 let chatting = false, chatQ = [], chatGap = 0;
 const CHAT_KEEP = 9; // seconds a line stays up before it fades (they all show while you're typing)
 const SAY = {

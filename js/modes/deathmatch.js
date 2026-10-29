@@ -76,12 +76,13 @@ let recs = [], youRec = null, matchT = 0, killedBy = '', joins = [];
 function makeRecs() {
   youRec = { name: myName, you: true, css: '#ffd23f', score: 0, kills: 0, deaths: 0, streak: 0 };
   recs = [youRec]; joins = [];
-  // bot 1 is there from the start and has an obvious bot name (it never chats).
+  // bot 1 is there from the start and has a plain NATO-alphabet name like "Foxtrot" (it never chats).
+  // Later, its playstyle can be picked from that name (js/names.js BOT_DEFAULTS).
   // The others join spread across the first minute, a little randomly, with real-looking names (js/names.js).
   const next = nameMaker([myName]);
   for (let i = 0; i < BOT_COUNT; i++) {
     const at = i === 0 ? 0 : Math.min(JOIN_T - 2, Math.max(5, JOIN_T * i / BOT_COUNT + (Math.random() - .5) * 10));
-    const nm = i === 0 ? { name: defaultBotName(), lang: 'en', quiet: true } : next();
+    const nm = i === 0 ? { name: defaultBotName(myName), lang: 'en', quiet: true } : next();
     joins.push({ i, at, ...nm });
   }
   joins.sort((a, b) => a.at - b.at);
@@ -92,7 +93,6 @@ function joinBot(j) {
     score: 0, kills: 0, deaths: 0, streak: 0, b: null, wait: .5 };
   recs.push(r);
   if (MATCH_T - matchT > 1) { feed(`${nameTag(r)} joined`); beep(520, .1, 'triangle', .06); } // no message for the one that starts with you
-  botSay(r, 'hi', .3, 2 + Math.random() * 4);
 }
 const ranked = () => [...recs].sort((a, b) => b.score - a.score || b.kills - a.kills || a.deaths - b.deaths);
 const ord = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'TH' : ['TH', 'ST', 'ND', 'RD'][n % 10] ?? 'TH');

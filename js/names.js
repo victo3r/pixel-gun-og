@@ -1,5 +1,5 @@
 // player names: your saved name, plus the name pool bots draw from.
-// The bot that's there when the match starts gets an obvious bot name ("Bot Alpha"). The ones that join later
+// The bot that's there when the match starts gets a NATO-alphabet name ("Foxtrot"). The ones that join later
 // get names that look like real people made them, so a lobby full of bots doesn't feel like one.
 // Most are English. The rest are spread across other big languages, and each name remembers its language
 // so that bot can chat in it (js/chat.js).
@@ -22,7 +22,7 @@ const N_TAGS = ['Vortex', 'Shadow', 'Zyro', 'Nova', 'Frost', 'Blaze', 'Raven', '
   'Axel', 'Blitz', 'Crux', 'Dusk', 'Flux', 'Grim', 'Hydra', 'Ignis', 'Jolt', 'Krypt', 'Mako', 'Neon', 'Omen', 'Prism', 'Quake', 'Rune',
   'Sky', 'Titan', 'Umbra', 'Vex', 'Wolfie', 'Zap', 'NoScope', 'Headshot', 'OneTap', 'Sweaty', 'Clutch', 'Tryhard', 'Snipez', 'Quickscope',
   'Laggy', 'Noob', 'ProGamer', 'NotABot', 'Camper', 'Spammer', 'Reloading', 'Dorito', 'MrBean', 'SirLag', 'Kawaii', 'Chungus', 'Bobby',
-  'Goose', 'Boop', 'Pog', 'Yeet', 'Bonk', 'Sus', 'Moist', 'Bruh', 'DeathStar', 'Skull', 'Kilo', 'Delta', 'Maverick', 'Ronin', 'Shogun'];
+  'Goose', 'Boop', 'Pog', 'Yeet', 'Bonk', 'Sus', 'Moist', 'Bruh', 'DeathStar', 'Skull', 'Maverick', 'Ronin', 'Shogun'];
 // first names, the way kids type them as usernames
 const N_FIRST = ['jake', 'tyler', 'ethan', 'noah', 'liam', 'mason', 'logan', 'owen', 'ryan', 'kyle', 'jayden', 'aiden', 'caleb', 'dylan',
   'max', 'sam', 'ben', 'leo', 'eli', 'zach', 'nate', 'josh', 'mia', 'ava', 'emma', 'lily', 'zoe', 'chloe', 'ella', 'maya', 'ruby', 'nora',
@@ -115,22 +115,33 @@ function nameMaker(taken) {
   return () => {
     for (let i = 0; i < 50; i++) {
       const n = randomName();
-      if (n.name.length > NAME_MAX || used.has(n.name.toLowerCase())) continue;
+      if (n.name.length > NAME_MAX || used.has(n.name.toLowerCase()) || NATO_SET.has(n.name.toLowerCase())) continue;
       used.add(n.name.toLowerCase()); return n;
     }
     return { name: 'Player' + (1000 + Math.random() * 9000 | 0), lang: 'en' };
   };
 }
-// the obvious bot that's in the match with you from the start
-const BOT_DEFAULTS = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Kilo', 'Sierra', 'Tango', 'Zulu'];
-const defaultBotName = () => 'Bot ' + pickN(BOT_DEFAULTS);
+// the bot that's in the match with you from the start gets a plain NATO-alphabet name ("Foxtrot").
+// These names are kept only for bots (no real-looking name can be one exactly), so later a playstyle can hang off each.
+const BOT_DEFAULTS = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel', 'India', 'Juliett', 'Kilo', 'Lima',
+  'Mike', 'November', 'Oscar', 'Papa', 'Quebec', 'Romeo', 'Sierra', 'Tango', 'Uniform', 'Victor', 'Whiskey', 'Xray', 'Yankee', 'Zulu'];
+const NATO_SET = new Set(BOT_DEFAULTS.map(s => s.toLowerCase()));
+const defaultBotName = (not = '') => { // never the same as your name
+  const ok = BOT_DEFAULTS.filter(s => s.toLowerCase() !== not.toLowerCase());
+  return pickN(ok);
+};
 
 // ---------- your name: saved in the browser, set in the lobby ----------
 function cleanName(s) { return String(s ?? '').replace(/[<>&"']/g, '').replace(/\s+/g, ' ').trim().slice(0, NAME_MAX); }
-const newMyName = () => { // a fresh default: BraveLion42 style
-  const n = pickN(N_ADJ) + pickN(N_NOUN) + (10 + (Math.random() * 90 | 0));
-  return n.length <= NAME_MAX ? n : pickN(N_ADJ) + pickN(N_NOUN).slice(0, 5);
-};
+// the default name a new player gets, and what the dice rolls: always adjective + noun (BraveLion, BraveLion42)
+function newMyName(not = '') {
+  for (let i = 0; i < 20; i++) {
+    let n = pickN(N_ADJ) + pickN(N_NOUN);
+    if (Math.random() < .5) n += 10 + (Math.random() * 90 | 0);
+    if (n.length <= NAME_MAX && n.toLowerCase() !== not.toLowerCase()) return n;
+  }
+  return 'BraveLion' + (10 + (Math.random() * 90 | 0));
+}
 let myName = cleanName(localStorage.getItem('pgog-name'));
 if (!myName) { myName = newMyName(); localStorage.setItem('pgog-name', myName); }
 function setMyName(s) {
