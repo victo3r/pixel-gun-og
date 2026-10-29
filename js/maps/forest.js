@@ -3,7 +3,7 @@
 startMap('forest', {
   name: 'The Forest', size: 'medium', half: 36,
   // dim green light under the leaves, fog that swallows the far trees
-  env: { sky: 0x0f2a22, fog: 0x15342b, fogNear: 10, fogFar: 62, hemiSky: 0xa8e0c0, hemiGround: 0x1c2a16, hemi: .8, sunColor: 0xd8f0b0, sun: .45 },
+  env: { sky: 0x0f2a22, fog: 0x15342b, fogNear: 10, fogFar: 62, hemiSky: 0xa8e0c0, hemiGround: 0x1c2a16, hemi: .8, sunColor: 0xbccdf0, sun: .45, sunDir: [-.45, 1, .3] }, // the "sun" here is the moon
   pads: [[-5, 26], [6, -25], [-26, 4], [26, -2], [19, 19], [-19, -19]],
   // a few crates: some round the middle clearing, an old camp in the north-east, a stash in the south-west
   crates: [[4.8, 4.2, 0], [5.4, 5.6, 0], [-5.2, -4.4, 1], [-6, 4.4, 0], [5.6, -4.8, 0],
@@ -176,22 +176,57 @@ for (let i = 0; i < 40; i++) {
   const cp = box(.3, .12, .3, capMats[i % 2]); cp.position.set(x, .25, z); add(cp);
 }
 
-// ---------- light shafts through gaps in the canopy, and fireflies ----------
-const shaftTex = (() => { // bright up top, fades out before it reaches the ground so it doesn't wash out your screen when you walk through
+// ---------- the moon, and moonlight coming down through gaps in the canopy ----------
+// everything uses one direction (MOON): the moon sits that way in the sky, the main light shines from there,
+// and every shaft leans the same way, so they all look like they come from the moon
+const MOON = new THREE.Vector3(...M.env.sunDir).normalize(), MOON_C = 0xcfdcff;
+const moonTex = tex(g => { // pixel-art full moon with a few craters
+  g.clearRect(0, 0, 16, 16);
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+    const d = Math.hypot(x - 7.5, y - 7.5); if (d > 7.2) continue;
+    g.fillStyle = d > 6.2 ? '#c9d2df' : '#eef2f8'; g.fillRect(x, y, 1, 1);
+  }
+  g.fillStyle = '#c3ccd9'; for (const [x, y, w, h] of [[4, 4, 3, 2], [9, 3, 2, 2], [10, 8, 3, 3], [5, 10, 2, 2], [3, 7, 1, 1], [8, 12, 2, 1]]) g.fillRect(x, y, w, h);
+});
+moonTex.wrapS = moonTex.wrapT = THREE.ClampToEdgeWrapping;
+const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: moonTex, fog: false, transparent: true }));
+moon.scale.setScalar(9);
+const moonGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: MOON_C, fog: false, transparent: true, opacity: .35, blending: THREE.AdditiveBlending, depthWrite: false }));
+moonGlow.scale.setScalar(42);
+add(moonGlow); add(moon); // they follow the camera (see M.tick) so the moon always looks infinitely far away
+
+// shafts only go where the moon can actually be seen through the leaves
+const CANOPY = 12; // shafts start up here, inside the leaves, and fade in so you never see a hard top edge
+const blocked = (x, z) => leaves.some(([lx, ly, lz, s]) => { // would a ray from this ground spot to the moon hit a leaf clump?
+  const t = ly / MOON.y;
+  return Math.hypot(x + MOON.x * t - lx, z + MOON.z * t - lz) < s * .62;
+});
+const shaftTex = (() => { // fades in from the canopy, strongest in the middle, fades out just above the ground
   const c = document.createElement('canvas'); c.width = 2; c.height = 64;
   const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64);
-  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.6, 'rgba(255,255,255,.6)'); gr.addColorStop(.88, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.3, 'rgba(255,255,255,.9)'); gr.addColorStop(.55, 'rgba(255,255,255,1)'); gr.addColorStop(.92, 'rgba(255,255,255,.15)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = gr; g.fillRect(0, 0, 2, 64);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 })();
-const shaftMat = new THREE.MeshBasicMaterial({ map: shaftTex, color: 0xd8ffd0, transparent: true, opacity: .06, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
-const shafts = [];
-for (const [x, z, r] of [[3, -6.5, .25], [-4, 6.5, .3],[19, 18, .28], [-18.5, -19.5, .22], [-26, 4, .3], [26, -2, .25]]) {
-  for (const ry of [0, Math.PI / 2]) {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 22), shaftMat.clone());
-    m.rotation.order = 'YXZ'; m.rotation.set(0, ry, r); m.position.set(x, 10, z); add(m); shafts.push(m);
-  }
+const shaftMat = new THREE.MeshBasicMaterial({ map: shaftTex, color: MOON_C, transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+const moonPoolMat = new THREE.MeshBasicMaterial({ map: glowTex, color: MOON_C, transparent: true, opacity: .16, blending: THREE.AdditiveBlending, depthWrite: false });
+const shaftLen = CANOPY / MOON.y, up = new THREE.Vector3(0, 1, 0);
+const shaftGeo = new THREE.CylinderGeometry(1.1, 1.5, shaftLen, 14, 1, true); // a soft open tube, a bit wider at the bottom
+const shafts = [], srnd = seeded(91), gaps = [];
+for (let x = -FA + 3; x <= FA - 3; x += 1.5) for (let z = -FA + 3; z <= FA - 3; z += 1.5) gaps.push([x, z, srnd()]);
+gaps.sort((a, b) => a[2] - b[2]); // check the spots in a fixed shuffled order so they spread over the map
+for (const [x, z] of gaps) {
+  if (shafts.length >= 8) break;
+  if (shafts.some(s => Math.hypot(s.x - x, s.z - z) < 8)) continue;
+  if ([[0, 0], [1.2, 0], [-1.2, 0], [0, 1.2], [0, -1.2]].some(([ox, oz]) => blocked(x + ox, z + oz))) continue; // the gap has to be wide enough
+  const m = new THREE.Mesh(shaftGeo, shaftMat.clone());
+  m.quaternion.setFromUnitVectors(up, MOON);
+  m.position.set(x + MOON.x * shaftLen / 2, MOON.y * shaftLen / 2, z + MOON.z * shaftLen / 2); add(m);
+  const pool = new THREE.Mesh(poolGeo, moonPoolMat); pool.rotation.x = -Math.PI / 2; pool.scale.set(.55, .55, 1); pool.position.set(x, .05, z); add(pool);
+  shafts.push({ m, x, z });
 }
+
+// ---------- fireflies ----------
 const flies = [];
 for (let i = 0; i < 70; i++) {
   const s = .06 + rnd() * .06;
@@ -206,7 +241,8 @@ M.tick = () => { // runs every frame while this map is loaded
     f.m.material.opacity = .15 + .85 * Math.max(0, Math.sin(t * f.s * 2 + f.p));
   }
   for (const l of lampLights) l.intensity = 9 + Math.sin(t * 9 + l.position.x) * .7 + Math.sin(t * 23 + l.position.z) * .35; // lanterns flicker
-  for (const m of shafts) m.material.opacity = .09 + Math.sin(t * .5 + m.position.x) * .03;
+  for (const s of shafts) s.m.material.opacity = .07 + Math.sin(t * .4 + s.x) * .02; // leaves moving overhead
+  moon.position.copy(camera.position).addScaledVector(MOON, 150); moonGlow.position.copy(moon.position);
 };
 }
 useMap('yard'); // the yard is loaded until you pick something else in the lobby

@@ -79,6 +79,6 @@ function useMap(id) {
   const e = m.env;
   scene.background.setHex(e.sky); scene.fog.color.setHex(e.fog); scene.fog.near = e.fogNear; scene.fog.far = e.fogFar;
   hemi.color.setHex(e.hemiSky); hemi.groundColor.setHex(e.hemiGround); hemi.intensity = e.hemi;
-  sun.color.setHex(e.sunColor); sun.intensity = e.sun;
+  sun.color.setHex(e.sunColor); sun.intensity = e.sun; sun.position.set(...(e.sunDir || [10, 20, 5])); // which way the light comes from
   if (m.pads.length !== PAD_COUNT[m.size]) console.warn(`${id} has ${m.pads.length} pads, ${m.size} maps should have ${PAD_COUNT[m.size]}`);
 }
