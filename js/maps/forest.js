@@ -196,22 +196,24 @@ moonGlow.scale.setScalar(42);
 add(moonGlow); add(moon); // they follow the camera (see M.tick) so the moon always looks infinitely far away
 
 // shafts only go where the moon can actually be seen through the leaves
-const CANOPY = 12; // shafts start up here, inside the leaves, and fade in so you never see a hard top edge
+const CANOPY = 34; // shafts start high above the leaves and fade in slowly, so they look like they reach up to the moon
 const blocked = (x, z) => leaves.some(([lx, ly, lz, s]) => { // would a ray from this ground spot to the moon hit a leaf clump?
   const t = ly / MOON.y;
   return Math.hypot(x + MOON.x * t - lx, z + MOON.z * t - lz) < s * .62;
 });
-const shaftTex = (() => { // fades in from the canopy, strongest in the middle, fades out just above the ground
-  const c = document.createElement('canvas'); c.width = 2; c.height = 64;
-  const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64);
-  gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.3, 'rgba(255,255,255,.9)'); gr.addColorStop(.55, 'rgba(255,255,255,1)'); gr.addColorStop(.92, 'rgba(255,255,255,.15)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = gr; g.fillRect(0, 0, 2, 64);
+const shaftLen = CANOPY / MOON.y, up = new THREE.Vector3(0, 1, 0);
+const shaftTex = (() => { // long soft fade-in up in the sky, full through the canopy, fades out just above the ground
+  const c = document.createElement('canvas'); c.width = 2; c.height = 128;
+  const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 128);
+  const h = y => 1 - y / CANOPY; // height above the ground -> spot on the texture (0 = top, 1 = ground)
+  gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(h(20), 'rgba(255,255,255,.55)'); gr.addColorStop(h(11), 'rgba(255,255,255,1)');
+  gr.addColorStop(h(4), 'rgba(255,255,255,.75)'); gr.addColorStop(h(.8), 'rgba(255,255,255,.15)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 2, 128);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 })();
 const shaftMat = new THREE.MeshBasicMaterial({ map: shaftTex, color: MOON_C, transparent: true, opacity: .07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
 const moonPoolMat = new THREE.MeshBasicMaterial({ map: glowTex, color: MOON_C, transparent: true, opacity: .16, blending: THREE.AdditiveBlending, depthWrite: false });
-const shaftLen = CANOPY / MOON.y, up = new THREE.Vector3(0, 1, 0);
-const shaftGeo = new THREE.CylinderGeometry(1.1, 1.5, shaftLen, 14, 1, true); // a soft open tube, a bit wider at the bottom
+const shaftGeo = new THREE.CylinderGeometry(1.0, 1.5, shaftLen, 14, 1, true); // a soft open tube, a bit wider at the bottom
 const shafts = [], srnd = seeded(91), gaps = [];
 for (let x = -FA + 3; x <= FA - 3; x += 1.5) for (let z = -FA + 3; z <= FA - 3; z += 1.5) gaps.push([x, z, srnd()]);
 gaps.sort((a, b) => a[2] - b[2]); // check the spots in a fixed shuffled order so they spread over the map
