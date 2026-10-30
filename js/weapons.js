@@ -6,11 +6,11 @@ const CATS = [['primary', 'PRIMARY'], ['backup', 'BACKUP'], ['melee', 'MELEE'], 
 const CAT_I = Object.fromEntries(CATS.map(([k], i) => [k, i]));
 // def = default weapon: you always have it, it never runs out of ammo and it can't be upgraded
 const BASE = [
-  { name: 'Pistol',  cat: 'backup',  def: true, dmg: 34, rate: .22, mag: 12, reload: 1.0, pellets: 1, spread: .004, auto: false, color: 0x444444, len: .3,  vol: .25, cut: 2200 },
+  { name: 'Pistol',  cat: 'backup',  def: true, dmg: 34, rate: .22, mag: 12, reload: 1.0, pellets: 1, spread: 0,    auto: false, color: 0x444444, len: .3,  vol: .25, cut: 2200 },
   { name: 'Shotgun', cat: 'primary', dmg: 16, rate: .75, mag: 6,  reload: 1.6, pellets: 9, spread: .07,  auto: false, color: 0x6b4a2b, len: .6,  vol: .45, cut: 900 },
-  { name: 'Rifle',   cat: 'primary', dmg: 22, rate: .09, mag: 30, reload: 1.4, pellets: 1, spread: .015, auto: true,  color: 0x2f3b2f, len: .55, vol: .2,  cut: 2600 },
-  { name: 'Sniper',  cat: 'sniper',  dmg: 150, rate: 1.1, mag: 5, reload: 2.0, pellets: 1, spread: .05,  auto: false, color: 0x1a1a1a, len: .9,  vol: .5,  cut: 3200, scope: true },
-  { name: 'Minigun', cat: 'primary', dmg: 14, rate: .05, mag: 120, reload: 2.6, pellets: 1, spread: .035, auto: true, color: 0x777777, len: .7,  vol: .18, cut: 2000 },
+  { name: 'Rifle',   cat: 'primary', dmg: 22, rate: .09, mag: 30, reload: 1.4, pellets: 1, spread: .006, auto: true,  color: 0x2f3b2f, len: .55, vol: .2,  cut: 2600 },
+  { name: 'Sniper',  cat: 'sniper',  dmg: 150, rate: 1.1, mag: 5, reload: 2.0, pellets: 1, spread: 0,    auto: false, color: 0x1a1a1a, len: .9,  vol: .5,  cut: 3200, scope: true },
+  { name: 'Minigun', cat: 'primary', dmg: 14, rate: .05, mag: 120, reload: 2.6, pellets: 1, spread: .012, auto: true, color: 0x777777, len: .7,  vol: .18, cut: 2000 },
   // knife: hold shoot to keep stabbing. range is how far it reaches
   { name: 'Knife',   cat: 'melee',   def: true, melee: true, dmg: 60, rate: .4, range: 2.6, mag: 1, reload: 0, pellets: 1, spread: 0, auto: true, color: 0xd8dde3, len: .3, vol: .1, cut: 3500, model: 'knife' },
   // flamethrower: short cone that hits everything in front of you and sets zombies on fire. mag = fuel

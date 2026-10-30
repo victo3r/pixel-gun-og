@@ -16,8 +16,8 @@ function shoot() {
     if (w.rocket) fireRocket(w);
     else {
       const targets = shotTargets();
-      // scoped sniper is pinpoint; aiming any other gun halves its spread
-      const spread = w.scope ? (adsT > .9 ? 0 : w.spread) : w.spread * (1 - adsT * .5);
+      // Pixel Gun style: only primaries spread (shotgun wide, rifle/minigun small); aiming halves it. Pistol and sniper are pinpoint, scoped or not.
+      const spread = w.spread * (1 - adsT * .5);
       for (let i = 0; i < w.pellets; i++) {
         ndc.set((Math.random() - .5) * spread * 2, (Math.random() - .5) * spread * 2);
         ray.setFromCamera(ndc, camera);

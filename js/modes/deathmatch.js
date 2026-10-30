@@ -122,12 +122,7 @@ function scoreKill(killer, victim, head) {
   feed(killer && killer !== victim ? `${nameTag(killer)} ${head ? '⌖' : '✖'} ${nameTag(victim)}` : `${nameTag(victim)} ✖`);
   const st = killer && killer !== victim && STREAKS[killer.streak];
   if (st) feed(`${nameTag(killer)} <b style="color:#ffd23f">${st[1]}!</b>`); // everyone sees streaks in the feed
-  // bots sometimes react in chat: more often when it's you that got them, or they got you
-  if (killer && killer !== victim) {
-    botSay(victim, 'died', killer.you ? .2 : .07);
-    if (st && killer.streak >= 5) botSay(killer, 'streak', .4);
-    else botSay(killer, 'kill', victim.you ? .15 : .04);
-  }
+  // bots only talk when you say something first (js/chat.js botsHear), not on their own
 }
 
 // ---------- spawning: somewhere open, as far from everyone else as it can find ----------

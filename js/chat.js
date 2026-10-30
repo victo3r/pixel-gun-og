@@ -1,13 +1,16 @@
 // chat (deathmatch only): press the chat key (T or Enter) to type, Enter sends (an empty line just closes it), Esc closes it.
-// Bots chat too, now and then: reacting when they die or get a kill, and answering a few things you say
-// (including "hi"). Bots with names in another language usually talk in that language. The NATO-named bot never talks.
+// Bots never talk on their own. They only answer when you say something (hi, gg, lol, compliments, trash talk,
+// or now and then a plain "?" / "ok" to anything else). Bots with names in another language usually answer in it.
+// The NATO-named bot never talks.
 let chatting = false, chatQ = [], chatGap = 0;
 const CHAT_KEEP = 9; // seconds a line stays up before it fades (they all show while you're typing)
 const SAY = {
   en: { hi: ['hi', 'hey', 'yo', 'hello', 'sup', 'hii', 'gl hf', 'hey guys', 'heyy'], gg: ['gg', 'gg wp', 'ggs', 'good game', 'gg ez'],
     died: ['nice shot', 'lucky', 'bruh', 'how', 'wow', 'lag', 'ugh', 'nooo', 'who keeps shooting me', 'bro what', 'ok that was clean', 'camper'],
     kill: ['ez', 'lol', 'gotcha', 'sorry', 'oops', 'get good', 'too easy'], streak: ['im on fire', 'cant stop me', 'ez', 'who next'],
-    lol: ['lol', 'lmao', 'haha', 'xd', 'LOL'], bot: ['not a bot lol', 'im not a bot', 'bro thinks im a bot', '?? no'] },
+    lol: ['lol', 'lmao', 'haha', 'xd', 'LOL'], bot: ['not a bot lol', 'im not a bot', 'bro thinks im a bot', '?? no'],
+    ty: ['ty', 'thx', 'thanks', 'tyty', 'u too'], trash: ['ok', 'lol ok', 'cope', 'sure buddy', 'says you', 'k'],
+    meh: ['?', 'what', 'ok', 'lol', 'huh', 'k', 'idk'] },
   es: { hi: ['hola', 'holaa', 'buenas', 'hola a todos'], gg: ['gg', 'buena partida', 'gg bien jugado'],
     died: ['que suerte', 'noo', 'buen tiro', 'lag', 'casi', 'que??'], kill: ['jaja', 'ez', 'facil'], lol: ['jajaja', 'jaja', 'xd'] },
   pt: { hi: ['oi', 'ola', 'eae', 'salve'], gg: ['gg', 'boa partida'], died: ['sorte', 'boa', 'lag', 'aff', 'nao acredito'],
@@ -63,6 +66,9 @@ function botsHear(text) {
   else if (/^(hi+|hey+|hello|yo|sup|hola|salut|ciao|hallo|oi|привет|你好)\b/.test(t)) some('hi', 2, .6);
   else if (/\bgg\b|good game/.test(t)) some('gg', 3, .6);
   else if (/(lol|lmao|haha|xd|jaja|mdr|kkk)/.test(t)) some('lol', 1, .4);
+  else if (/\b(nice|ns|nt|gj|wp|good shot|well played)\b/.test(t)) some('ty', 1, .6);
+  else if (/\b(ez|noob|nub|trash|bad|camper|hacker|hacks?)\b/.test(t)) some('trash', 1, .6);
+  else some('meh', 1, .25); // anything else: sometimes one bot goes "?" or "ok"
 }
 
 function openChat() {
